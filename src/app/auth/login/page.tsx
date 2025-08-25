@@ -1,36 +1,32 @@
 "use client";
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { FcGoogle } from 'react-icons/fc'; 
-import { FiMail, FiLock, FiArrowRight } from 'react-icons/fi'; 
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { FcGoogle } from "react-icons/fc";
+import { FiMail, FiLock, FiArrowRight } from "react-icons/fi";
 
 export default function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleGoogleSignIn = async () => {
-    
-    await signIn('google', { callbackUrl: '/' });
+    await signIn("google", { callbackUrl: "/" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    
-    const result = await signIn('credentials', {
-      redirect: false, 
+    const result = await signIn("credentials", {
+      redirect: false,
       email,
       password,
     });
 
     if (result?.error) {
-
-      setError('Invalid email or password. Please try again.');
+      setError("Invalid email or password. Please try again.");
     } else if (result?.url) {
-      
       window.location.href = result.url;
     }
   };
@@ -38,9 +34,8 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl border border-green-200 shadow-xl p-8 space-y-6">
-        
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-green-600">Sign In</h1>
+          <h1 className="text-2xl font-bold text-green-600">Sign In</h1>
           <p className="text-gray-500 mt-2">
             Continue your path to English mastery! 🚀
           </p>
@@ -55,14 +50,14 @@ export default function SignInPage() {
           <span className="font-medium text-gray-700">Sign In with Google</span>
         </button>
 
-
         <div className="flex items-center">
           <div className="flex-grow border-t border-gray-200"></div>
-          <span className="flex-shrink mx-4 text-sm text-gray-400">Or continue with email</span>
+          <span className="flex-shrink mx-4 text-sm text-gray-400">
+            Or continue with email
+          </span>
           <div className="flex-grow border-t border-gray-200"></div>
         </div>
 
-        
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Input */}
           <div>
@@ -105,17 +100,22 @@ export default function SignInPage() {
               />
             </div>
           </div>
-          
+
           {/* Error Message */}
           {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
-          
           <div className="flex items-center justify-between">
             <label className="flex items-center">
-              <input type="checkbox" className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500" />
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
               <span className="ml-2 text-sm text-gray-600">Remember me</span>
             </label>
-            <a href="#" className="text-sm font-medium text-green-600 hover:underline">
+            <a
+              href="#"
+              className="text-sm font-medium text-green-600 hover:underline"
+            >
               Forgot password?
             </a>
           </div>
@@ -129,28 +129,30 @@ export default function SignInPage() {
           </button>
         </form>
 
-        
         <p className="text-sm text-center text-gray-500">
-          New to LissanAI?{' '}
-          <a href="#" className="font-semibold text-green-600 hover:underline">
+          New to LissanAI?{" "}
+          <a
+            href="/auth/signup"
+            className="font-semibold text-green-600 hover:underline"
+          >
             Create account
           </a>
         </p>
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-6 flex items-center justify-around text-sm text-gray-600">
-           <div className="flex items-center gap-2">
-             <span className="w-3 h-3 bg-green-400 rounded-full"></span>
-             <span>Secure Login</span>
-           </div>
-           <div className="flex items-center gap-2">
-             <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-             <span>Fast Access</span>
-           </div>
-           <div className="flex items-center gap-2">
-             <span className="w-3 h-3 bg-pink-400 rounded-full"></span>
-             <span>Always Available</span>
-           </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-green-400 rounded-full"></span>
+            <span>Secure Login</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+            <span>Fast Access</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 bg-pink-400 rounded-full"></span>
+            <span>Always Available</span>
+          </div>
         </div>
       </div>
     </div>
