@@ -29,7 +29,7 @@ export default function GrammarForm({
         onChange={(e) => setText(e.target.value)}
       />
       <div className="flex justify-between mt-2">
-        <span className="text-sm text-gray-500">{text.length} characters</span>
+        <span className="text-sm text-black">{text.length} characters</span>
         <Button onClick={handleSubmit} disabled={loading || !text}>
           {loading ? "Checking..." : "Check Grammar"}
         </Button>

@@ -25,7 +25,7 @@ export default function Results({ analysis }: { analysis: any }) {
               <li key={i} className="p-2 rounded bg-red-50">
                 <span className="font-bold">{issue.type}: </span>
                 {issue.message}
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-black">
                   Suggestion: {issue.suggestion}
                 </div>
               </li>

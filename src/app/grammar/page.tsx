@@ -23,7 +23,7 @@ export default function GrammarCoachPage() {
 
   const handleAnalyze = async () => {
     if (!text.trim()) return;
-
+    setActiveTab("grammar"); // Switch to grammar tab to show analysis results
     setIsAnalyzing(true);
 
     // Simulate API call
@@ -193,11 +193,11 @@ export default function GrammarCoachPage() {
             </Card>
 
             {/* Analysis Results */}
-            {analysisResults && (
+            {activeTab === "grammar" && analysisResults && (
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <span>📊 Analysis Results</span>
+                    <span>Analysis Results</span>
                     <Badge
                       variant="secondary"
                       className="bg-blue-100 text-blue-800"
@@ -221,8 +221,8 @@ export default function GrammarCoachPage() {
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2">
                         <AlertCircle className="w-5 h-5 text-yellow-500" />
-                        <span className="font-medium">
-                          {analysisResults.issuesFound} Issue Found
+                        <span className="font-semibold text-[#112D4F]">
+                          {analysisResults.issuesFound} Issues Found
                         </span>
                       </div>
 
@@ -230,15 +230,21 @@ export default function GrammarCoachPage() {
                         (issue: any, index: number) => (
                           <div
                             key={index}
-                            className="border rounded-lg p-4 bg-yellow-50"
+                            className="border rounded-lg p-4 bg-gray-50"
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center space-x-2">
-                                <Badge variant="outline" className="text-xs">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-[#112D4F]"
+                                >
                                   grammar
                                 </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  medium priority
+                                <Badge variant="outline" className=" text-xs">
+                                  <span className="text-blue-900">
+                                    {" "}
+                                    medium priority
+                                  </span>
                                 </Badge>
                               </div>
                               <Button className="text-xs bg-transparent">
@@ -250,11 +256,11 @@ export default function GrammarCoachPage() {
                                 "{issue.original}"
                               </span>
                               <span className="mx-2">→</span>
-                              <span className="text-green-600">
+                              <span className="text-[#112D4F]">
                                 "{issue.suggestion}"
                               </span>
                             </div>
-                            <p className="text-xs text-gray-600 mt-1">
+                            <p className="text-xs text-gray-900 mt-1">
                               {issue.explanation}
                             </p>
                           </div>
@@ -267,20 +273,22 @@ export default function GrammarCoachPage() {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <span className="text-green-600">⚡</span>
-                      <span className="font-medium">Improved Version</span>
+                      <span className=" text-[#112D4F] font-semibold ">
+                        Improved Version
+                      </span>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <p className="text-md text-[#112D4F] whitespace-pre-line">
                         {analysisResults.improvedVersion}
                       </p>
                       <div className="flex space-x-2 mt-3">
-                        <Button className="text-xs bg-transparent">
-                          <Copy className="w-3 h-3 mr-1" />
-                          Copy
+                        <Button className="text-xs bg-blue-100  text-black rounded-full flex items-center">
+                          <Copy className="w-3 h-3 mr-1 text-black" />
+                          <span className="text-[#112D4F]">Copy</span>
                         </Button>
-                        <Button className="text-xs bg-transparent">
-                          <Download className="w-3 h-3 mr-1" />
-                          Download
+                        <Button className="text-xs bg-[#F8F7F7] rounded-full flex items-center">
+                          <Download className="w-3 h-3 mr-1 text-black" />
+                          <span className="text-[#112D4F]">Download</span>
                         </Button>
                       </div>
                     </div>
@@ -290,7 +298,9 @@ export default function GrammarCoachPage() {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Lightbulb className="w-4 h-4 text-yellow-500" />
-                      <span className="font-medium">Writing Tips</span>
+                      <span className="text-black font-semibold">
+                        Writing Tips
+                      </span>
                     </div>
                     <ul className="space-y-2">
                       {analysisResults.writingTips.map(
@@ -300,7 +310,7 @@ export default function GrammarCoachPage() {
                             className="flex items-start space-x-2 text-sm"
                           >
                             <Lightbulb className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
-                            <span>{tip}</span>
+                            <span className="text-[#112D4F]">{tip}</span>
                           </li>
                         )
                       )}
@@ -314,7 +324,7 @@ export default function GrammarCoachPage() {
             {activeTab === "examples" && (
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle>📝 Try Sample Texts</CardTitle>
+                  <CardTitle> Try Sample Texts</CardTitle>
                   <p className="text-sm text-gray-600">
                     Practice with these examples that contain common errors
                   </p>
@@ -325,10 +335,14 @@ export default function GrammarCoachPage() {
                       key={sample.id}
                       className="border rounded-lg p-4 bg-gray-50"
                     >
-                      <p className="text-sm mb-3">{sample.text}</p>
+                      <p className="text-sm text-black mb-3">{sample.text}</p>
                       <Button
-                        className="border bg-transparent"
-                        onClick={() => setText(sample.text)}
+                        className="border bg-[#] text-[#112D4F]"
+                        onClick={() => {
+                          setText(sample.text);
+                          setActiveTab("examples");
+                          setAnalysisResults(null); // Hide analysis results when switching to examples
+                        }}
                       >
                         {sample.title}
                       </Button>
@@ -356,20 +370,20 @@ export default function GrammarCoachPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Issues Found</span>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-gray-900">
                       {analysisResults.issuesFound}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Word Count</span>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-gray-900">
                       {analysisResults.wordCount}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Readability</span>
                     <Badge variant="outline" className="text-blue-600">
-                      Good
+                      <span className="text-green-600">Good</span>
                     </Badge>
                   </div>
                 </CardContent>
