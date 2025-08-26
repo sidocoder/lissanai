@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { FiBriefcase, FiMail, FiMic, FiEdit3, FiFacebook, FiTwitter, FiLinkedin, FiArrowLeft, FiArrowRight, FiMenu, FiX } from 'react-icons/fi';
 
 
@@ -32,10 +33,12 @@ interface Testimonial {
   quote: string;
 }
 
-// --- Main Page Component ---
+
 export default function LandingPage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated';
 
 
   useEffect(() => {
@@ -96,9 +99,27 @@ export default function LandingPage() {
               {navigationItems.map((item) => (
                 <a key={item.label} href={item.href} className="text-[#476385] hover:text-[#112d4e] transition-colors text-base font-medium">{item.label}</a>
               ))}
-              <Link href="/auth/login">
-                <button className="bg-[#f0f2f5] border border-transparent rounded-lg px-5 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition-colors">Log In</button>
-              </Link>
+              <div className="flex items-center space-x-4">
+                {status === 'loading' ? (
+                  <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
+                ) : isAuthenticated ? (
+                  <>
+                    <Link href="/dashboard">
+                      <button className="bg-[#0057b7] text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-[#004499] transition-colors">Dashboard</button>
+                    </Link>
+                    <button onClick={() => signOut()} className="bg-[#f0f2f5] rounded-lg px-5 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition-colors">Log Out</button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login">
+                      <button className="bg-[#f0f2f5] border border-transparent rounded-lg px-5 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition-colors">Log In</button>
+                    </Link>
+                    <Link href="/signup">
+                      <button className="bg-[#0057b7] text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-[#004499] transition-colors">Sign Up</button>
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Mobile Menu Button */}
@@ -108,7 +129,6 @@ export default function LandingPage() {
           </div>
         </div>
       </nav>
-
       
       {isMenuOpen && (
         <div className="fixed inset-0 bg-gray-900/90 z-50 flex flex-col items-center justify-center md:hidden">
@@ -117,9 +137,27 @@ export default function LandingPage() {
             {navigationItems.map((item) => (
               <a key={item.label} href={item.href} onClick={() => setIsMenuOpen(false)} className="text-white text-2xl font-semibold">{item.label}</a>
             ))}
-            <Link href="/auth/sign-in">
-              <button className="bg-white border border-transparent rounded-lg px-8 py-3 text-lg font-semibold text-black hover:bg-gray-200 transition-colors mt-4">Log In</button>
-            </Link>
+            <div className="flex flex-col items-center gap-6 mt-8">
+               {status === 'loading' ? (
+                  <div className="h-12 w-32 bg-gray-600 rounded-lg animate-pulse"></div>
+                ) : isAuthenticated ? (
+                  <>
+                    <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                        <button className="bg-white text-black rounded-lg px-8 py-3 text-lg font-semibold hover:bg-gray-200 transition-colors">Dashboard</button>
+                    </Link>
+                    <button onClick={() => { signOut(); setIsMenuOpen(false); }} className="text-white text-lg font-semibold">Log Out</button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                      <button className="bg-white border border-transparent rounded-lg px-8 py-3 text-lg font-semibold text-black hover:bg-gray-200 transition-colors">Log In</button>
+                    </Link>
+                    <Link href="/signup" onClick={() => setIsMenuOpen(false)}>
+                      <button className="bg-[#0057b7] text-white rounded-lg px-8 py-3 text-lg font-semibold hover:bg-[#004499] transition-colors">Sign Up</button>
+                    </Link>
+                  </>
+                )}
+            </div>
           </nav>
         </div>
       )}
