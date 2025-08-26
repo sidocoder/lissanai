@@ -23,10 +23,9 @@ export default function GrammarCoachPage() {
 
   const handleAnalyze = async () => {
     if (!text.trim()) return;
-    setActiveTab("grammar"); // Switch to grammar tab to show analysis results
+    setActiveTab("grammar"); 
     setIsAnalyzing(true);
 
-    // Simulate API call
     setTimeout(() => {
       const hasErrors =
         text.toLowerCase().includes("there") &&
