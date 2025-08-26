@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ReduxProvider } from "@/components/providers/ReduxProvider";
+import { NextAuthProvider } from "@/components/providers/NextAuthProvider";
+import AuthGate from "@/components/auth/AuthGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +30,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+
+        <ReduxProvider> 
+<NextAuthProvider>
+
+ <AuthGate> 
+      {children}  
+  </AuthGate> 
+</NextAuthProvider>
+
+
+        </ReduxProvider>
+        
       </body>
     </html>
   );
