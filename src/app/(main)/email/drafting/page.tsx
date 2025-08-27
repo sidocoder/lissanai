@@ -3,28 +3,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-// --- MODIFICATION START: Import new hooks for dropdown functionality ---
 import { useState, useRef, useEffect } from "react"
-// --- END MODIFICATION ---
 import Image from "next/image"
 import Link from "next/link";
 import { FiCopy, FiRefreshCw, FiSend, FiCheck, FiZap, FiStar, FiChevronDown, FiPlusCircle, FiXCircle } from "react-icons/fi"
 import { FaWandMagicSparkles } from "react-icons/fa6";
 import toast, { Toaster } from "react-hot-toast";
 import { IEmailProcessResponse } from "@/types";
+import Header from "@/components/Header";
 
 export default function EmailDraftingPage() {
-  // --- CORE LOGIC (UNCHANGED) ---
-  const [recipient, setRecipient] = useState("Manager")
-  const [purpose, setPurpose] = useState("Schedule a meeting")
+  
   const [userInput, setUserInput] = useState("")
   const [generatedEmail, setGeneratedEmail] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  
+  const [tone, setTone] = useState("Professional");
+  const [isToneDropdownOpen, setIsToneDropdownOpen] = useState(false);
+  const toneDropdownRef = useRef<HTMLDivElement>(null);
+  const toneOptions = ["Professional", "Casual", "Friendly", "Direct"];
 
-  // --- NEW STATE & DATA FOR CUSTOM DROPDOWN ---
   const [emailType, setEmailType] = useState("Meeting Request")
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
+  const emailDropdownRef = useRef<HTMLDivElement>(null);
 
   const emailOptions = [
       { label: "Job Application", category: "Career" },
@@ -34,22 +35,23 @@ export default function EmailDraftingPage() {
       { label: "General Inquiry", category: "Business" },
   ];
   
-  const selectedOption = emailOptions.find(opt => opt.label === emailType) || emailOptions[0];
+  const selectedEmailOption = emailOptions.find(opt => opt.label === emailType) || emailOptions[0];
 
-  // Effect to handle clicks outside of the dropdown to close it
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+      if (emailDropdownRef.current && !emailDropdownRef.current.contains(event.target as Node)) {
+        setIsEmailDropdownOpen(false);
+      }
+      if (toneDropdownRef.current && !toneDropdownRef.current.contains(event.target as Node)) {
+        setIsToneDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, [emailDropdownRef, toneDropdownRef]);
   
-  // --- CORE LOGIC (UNCHANGED) ---
   const handleGenerateEmail = async () => {
     if (!userInput.trim()) {
       toast.error("Please describe what you want to write about.");
@@ -62,20 +64,18 @@ export default function EmailDraftingPage() {
     try {
       const prompt = `
         Email Type: ${emailType}
-        Recipient: ${recipient}
-        Purpose: ${purpose}
+        Tone: ${tone}
         User's specific request: ${userInput}
       `;
 
       const response = await fetch('/api/email/draft', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: prompt,
           type: 'GENERATE',
           template_type: emailType,
+          tone: tone,
         }),
       });
 
@@ -115,71 +115,55 @@ export default function EmailDraftingPage() {
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
       <Toaster position="top-center" />
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-                <div className="flex items-center space-x-3">
-                    <div className="bg-blue-600 rounded-lg w-8 h-8 flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">L</span>
-                    </div>
-                    <span className="text-xl font-bold text-gray-800">LissanAI</span>
-                </div>
-                <nav className="hidden md:flex items-center space-x-8">
-                    <a href="#" className="text-gray-600 hover:text-gray-900 font-medium">Mock Interviews</a>
-                    <a href="#" className="text-gray-600 hover:text-gray-900 font-medium">Grammar Coach</a>
-                    <a href="#" className="text-gray-600 hover:text-gray-900 font-medium">Learn</a>
-                    <a href="#" className="text-blue-600 font-semibold">Email Drafting</a>
-                    <a href="#" className="text-gray-600 hover:text-gray-900 font-medium">Pronunciation</a>
-                </nav>
-            </div>
-        </div>
-      </header>
+      <Header/>
 
-      {/* Main Content Body */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
-        {/* Top Header Section */}
         <div className="text-center mb-8">
           <Image
-            src="/images/logo.png"
+            src="/images/mascot.png"
             alt="LissanAI Email Assistant"
             width={80}
             height={80}
-            className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-4 border-white shadow-lg"
+            className="w-20 h-20 rounded-full object-contain bg-teal-50 p-1 mx-auto mb-4 border-4 border-white shadow-lg"
           />
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
-            <FiSend /> Email Writing Assistant
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center justify-center gap-1 sm:gap-2">
+            <FiSend /> 
+            <span>Email Writing Assistant</span>
           </h1>
         </div>
 
-        {/* Floating Status & Stats */}
-        <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between mb-8">
+        <div className="bg-blue-50/60 border border-blue-200 rounded-lg p-4 flex flex-col items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
-                <Image src="/images/logo.png" alt="Mascot" width={40} height={40} className="w-10 h-10 rounded-full" />
-                <p className="text-gray-700 font-medium">Great work! Your email looks professional and polite. Ready to send?</p>
+                <Image 
+                    src="/images/mascot.png" 
+                    alt="Mascot" 
+                    width={40} 
+                    height={40} 
+                    className="w-10 h-10 rounded-full object-contain bg-white" 
+                />
+                <p className="text-gray-700 font-medium text-center sm:text-left">Great work! Your email looks professional and polite. Ready to send?</p>
             </div>
-            <div className="flex items-center gap-4 mt-4 sm:mt-0">
-                <div className="text-center">
-                    <p className="font-bold text-gray-800">14</p>
+            <div className="w-full grid grid-cols-3 gap-4">
+                <div className="bg-white rounded-lg shadow-sm border-t-4 border-green-400 p-2 text-center">
+                    <p className="font-bold text-lg text-green-500">14</p>
                     <p className="text-xs text-gray-500">Emails Written</p>
                 </div>
-                <div className="text-center">
-                    <p className="font-bold text-gray-800">3</p>
+                <div className="bg-white rounded-lg shadow-sm border-t-4 border-yellow-400 p-2 text-center">
+                    <p className="font-bold text-lg text-yellow-500">3</p>
                     <p className="text-xs text-gray-500">Day Streak</p>
                 </div>
-                <div className="text-center">
-                    <p className="font-bold text-green-500">+15</p>
+                <div className="bg-white rounded-lg shadow-sm border-t-4 border-purple-400 p-2 text-center">
+                    <p className="font-bold text-lg text-purple-500">+15</p>
                     <p className="text-xs text-gray-500">XP Today</p>
                 </div>
             </div>
         </div>
 
-        {/* Action Toggles */}
         <div className="flex justify-center items-center bg-gray-100 p-1 rounded-lg max-w-md mx-auto mb-8">
           <button className="flex-1 flex items-center justify-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-md shadow font-semibold transition-all">
             <FaWandMagicSparkles />
-            Generate from Amharic
+            Generate Email 
           </button>
           <Link
             href={{
@@ -199,58 +183,92 @@ export default function EmailDraftingPage() {
           </Link>
         </div>
 
-        {/* --- MODIFIED Email Type Card WITH DROPDOWN --- */}
-        <div className="bg-white border border-green-200 rounded-lg shadow-sm p-6 mb-8">
-            <h2 className="text-md font-semibold text-gray-800 mb-1">Email Type</h2>
-            <p className="text-sm text-gray-500 mb-4">Choose the type of email you want to write</p>
-            
-            <div className="relative" ref={dropdownRef}>
-                <button 
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full border border-gray-300 rounded-lg p-3 flex justify-between items-center bg-white cursor-pointer text-left"
-                >
-                    <span className="font-medium text-gray-700">{selectedOption.label}</span>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{selectedOption.category}</span>
-                        <FiChevronDown className={`text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                    </div>
-                </button>
-
-                {isDropdownOpen && (
-                    <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                        <ul>
-                            {emailOptions.map((option) => (
-                                <li 
-                                  key={option.label}
-                                  onClick={() => {
-                                      setEmailType(option.label);
-                                      setIsDropdownOpen(false);
-                                  }}
-                                  className="flex justify-between items-center p-3 hover:bg-gray-50 cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-gray-700">{option.label}</span>
-                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{option.category}</span>
-                                    </div>
-                                    {emailType === option.label && <FiCheck className="text-blue-600" />}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+           
+            <div className="bg-white border border-green-200 rounded-lg shadow-sm p-6">
+                <h2 className="text-md font-semibold text-gray-800 mb-1">Email Type</h2>
+                <p className="text-sm text-gray-500 mb-4">Choose the type of email you want to write</p>
+                <div className="relative" ref={emailDropdownRef}>
+                    <button 
+                      onClick={() => setIsEmailDropdownOpen(!isEmailDropdownOpen)}
+                      className="w-full border border-gray-300 rounded-lg p-3 flex justify-between items-center bg-white cursor-pointer text-left"
+                    >
+                        <span className="font-medium text-gray-700">{selectedEmailOption.label}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{selectedEmailOption.category}</span>
+                            <FiChevronDown className={`text-gray-400 transition-transform ${isEmailDropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                    </button>
+                    {isEmailDropdownOpen && (
+                        <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                            <ul>
+                                {emailOptions.map((option) => (
+                                    <li 
+                                      key={option.label}
+                                      onClick={() => {
+                                          setEmailType(option.label);
+                                          setIsEmailDropdownOpen(false);
+                                      }}
+                                      className="flex justify-between items-center p-3 hover:bg-gray-50 cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-gray-700">{option.label}</span>
+                                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{option.category}</span>
+                                        </div>
+                                        {emailType === option.label && <FiCheck className="text-blue-600" />}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 mt-4">
+                    <p className="text-sm font-semibold text-gray-600">Example:</p>
+                    <p className="text-sm text-gray-500">I would like to schedule a meeting to discuss the project requirements</p>
+                </div>
             </div>
-
-            <div className="bg-gray-50 rounded-lg p-3 mt-4">
-                <p className="text-sm font-semibold text-gray-600">Example:</p>
-                <p className="text-sm text-gray-500">I would like to schedule a meeting to discuss the project requirements</p>
+            
+           
+            <div className="bg-white border border-green-200 rounded-lg shadow-sm p-6">
+                <h2 className="text-md font-semibold text-gray-800 mb-1">Tone</h2>
+                <p className="text-sm text-gray-500 mb-4">Select the tone of the email</p>
+                 <div className="relative" ref={toneDropdownRef}>
+                    <button 
+                      onClick={() => setIsToneDropdownOpen(!isToneDropdownOpen)}
+                      className="w-full border border-gray-300 rounded-lg p-3 flex justify-between items-center bg-white cursor-pointer text-left"
+                    >
+                        <span className="font-medium text-gray-700">{tone}</span>
+                        <FiChevronDown className={`text-gray-400 transition-transform ${isToneDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isToneDropdownOpen && (
+                        <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                            <ul>
+                                {toneOptions.map((option) => (
+                                    <li 
+                                      key={option}
+                                      onClick={() => {
+                                          setTone(option);
+                                          setIsToneDropdownOpen(false);
+                                      }}
+                                      className="flex justify-between items-center p-3 hover:bg-gray-50 cursor-pointer"
+                                    >
+                                        <span className="font-medium text-gray-700">{option}</span>
+                                        {tone === option && <FiCheck className="text-blue-600" />}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 mt-4">
+                    <p className="text-sm font-semibold text-gray-600">Example:</p>
+                    <p className="text-sm text-gray-500">Choosing a casual tone might start with Hey team instead of Dear Sir/Madam.</p>
+                </div>
             </div>
         </div>
-        {/* --- END MODIFICATION --- */}
 
-
-        {/* Main Content - Dual Pane */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Left Pane - Input */}
+         
           <div className="bg-white rounded-lg border border-green-200 shadow-sm p-6">
             <h2 className="text-md font-semibold text-gray-800 flex items-center gap-2 mb-1"><FiPlusCircle /> Describe in Amharic/English</h2>
             <p className="text-sm text-gray-500 mb-4">Tell me what you want to write in Amharic, and Ill create a professional English email for you!</p>
@@ -276,7 +294,7 @@ export default function EmailDraftingPage() {
             </div>
           </div>
 
-          {/* Right Pane - Generated Email */}
+         
           <div className="bg-white rounded-lg border border-green-200 shadow-sm p-6">
             <h2 className="text-md font-semibold text-gray-800 flex items-center gap-2 mb-4">
                 <FiCheck /> Professional English Email
@@ -300,18 +318,37 @@ export default function EmailDraftingPage() {
                 <FiCopy />
                 <span>Copy Email</span>
               </button>
-              <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold">
+              
+              <Link
+                href={{
+                  pathname: '/email/writing',
+                  query: { text: generatedEmail },
+                }}
+                onClick={(e) => !generatedEmail && e.preventDefault()}
+                aria-disabled={!generatedEmail}
+                className={`flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  !generatedEmail 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-blue-700'
+                }`}
+              >
                 <FiZap />
                 <span>Professional Quality</span>
-              </button>
+              </Link>
+              
             </div>
           </div>
         </div>
 
-        {/* Email Writing Tips */}
         <div className="bg-white rounded-lg border border-green-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-6">
-            <Image src="/images/logo.png" alt="LissanAI Tips" width={40} height={40} className="w-10 h-10 rounded-full" />
+            <Image 
+                src="/images/mascot.png" 
+                alt="LissanAI Tips" 
+                width={40} 
+                height={40} 
+                className="w-10 h-10 rounded-full object-contain bg-white" 
+            />
             <h2 className="text-lg font-semibold text-gray-800">Lissans Email Writing Tips</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
