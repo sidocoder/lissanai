@@ -27,70 +27,74 @@ export default function GrammarCoachPage() {
     setActiveTab("grammar");
     setIsAnalyzing(true);
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/grammar/check`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-        }
-      );
-      if (!response.ok) {
-        setAnalysisResults({
-          issues: [],
-          improvedVersion: text,
-          writingTips: [
-            "Read your text aloud to catch errors",
-            "Use active voice when possible",
-            "Keep sentences clear and concise",
-            "Check subject-verb agreement",
-          ],
-          score: 100,
-          issuesFound: 0,
-          wordCount: text.split(" ").filter((word) => word.length > 0).length,
-          readability: "Good",
-        });
-        setIsAnalyzing(false);
-        return;
-      }
-      const data = await response.json();
-      setAnalysisResults({
-        improvedText: data.corrected_text ?? text,
-        issues: (data.corrections ?? []).map((correction: any) => ({
+    setTimeout(() => {
+      const issues = [];
+
+      //"has worked" error
+      if (text.toLowerCase().includes("has worked")) {
+        issues.push({
           type: "Grammar",
-          message: correction.explanation,
-          suggestion: correction.corrected_phrase,
-          original: correction.original_phrase,
-        })),
-        issuesFound: (data.corrections ?? []).length,
-        score: data.score ?? 100,
-        wordCount: text.split(" ").filter((word) => word.length > 0).length,
-        readability: data.readability ?? "Good",
-        writingTips: data.writingTips ?? [
-          "Read your text aloud to catch errors",
-          "Use active voice when possible",
-          "Keep sentences clear and concise",
-          "Check subject-verb agreement",
-        ],
+          message:
+            "Use 'have worked' instead of 'has worked' for plural subject.",
+          suggestion: "have worked",
+          original: "has worked",
+        });
+      }
+
+      // 2: "there is many" error
+      if (text.toLowerCase().includes("there is many")) {
+        issues.push({
+          type: "Grammar",
+          message: "Use 'there are many' instead of 'there is many'.",
+          suggestion: "there are many",
+          original: "there is many",
+        });
+      }
+
+      // 3: "i has" error
+      if (text.toLowerCase().includes("i has")) {
+        issues.push({
+          type: "Grammar",
+          message: "Use 'I have' instead of 'I has'.",
+          suggestion: "I have",
+          original: "I has",
+        });
+      }
+
+      // 4: "he go" error
+      if (text.toLowerCase().includes("he go")) {
+        issues.push({
+          type: "Grammar",
+          message: "Use 'he goes' instead of 'he go'.",
+          suggestion: "he goes",
+          original: "he go",
+        });
+      }
+
+      // Improved text: apply all suggestions (simple replace for demo)
+      let improvedText = text;
+      issues.forEach((issue) => {
+        const regex = new RegExp(issue.original, "gi");
+        improvedText = improvedText.replace(regex, issue.suggestion);
       });
-    } catch (error) {
+
       setAnalysisResults({
-        issues: [],
-        improvedVersion: text,
+        improvedText,
+        issues,
+        issuesFound: issues.length,
+        score: issues.length === 0 ? 100 : 85 - issues.length * 5,
+        wordCount: text.split(" ").filter((word) => word.length > 0).length,
+        readability: "Good",
         writingTips: [
           "Read your text aloud to catch errors",
           "Use active voice when possible",
           "Keep sentences clear and concise",
           "Check subject-verb agreement",
         ],
-        score: 100,
-        issuesFound: 0,
-        wordCount: text.split(" ").filter((word) => word.length > 0).length,
-        readability: "Good",
       });
-    }
-    setIsAnalyzing(false);
+
+      setIsAnalyzing(false);
+    }, 1200);
   };
 
   const sampleTexts = [
