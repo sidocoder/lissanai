@@ -11,16 +11,17 @@ import {
   Download,
   Lightbulb,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Image from "next/image";
-import Results from "./Results";
 
 export default function GrammarCoachPage() {
   const [activeTab, setActiveTab] = useState<"grammar" | "examples">("grammar");
   const [text, setText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleDownload = () => {
     if (!analysisResults?.improvedText) return;
@@ -40,112 +41,67 @@ export default function GrammarCoachPage() {
     navigator.clipboard.writeText(analysisResults.improvedText);
   };
 
+  const handleApplyFix = (issue: any) => {
+    const regex = new RegExp(issue.original, "gi");
+    const newText = text.replace(regex, issue.suggestion);
+    setText(newText);
+    setAnalysisResults(null);
+  };
+
   const handleAnalyze = async () => {
+    setErrorMsg(null);
     if (!text.trim()) return;
     setActiveTab("grammar");
     setIsAnalyzing(true);
 
-    setTimeout(() => {
-      const issues = [];
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/grammar/check`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        }
+      );
+      const data = await response.json();
 
-      if (
-        text ===
-        "I am writing to apply for the position of software developer at your company. I have 3 years experience in programming and I'm very excited about this opportunity."
-      ) {
-      }
-
-      if (
-        text ===
-        "Dear hiring manager, I want to introduce myself as a candidate for the marketing role. I has worked in various companies and learned many skills."
-      ) {
-        issues.push({
-          type: "Grammar",
-          message: "Use 'I have worked' instead of 'I has worked'.",
-          suggestion: "I have worked",
-          original: "I has worked",
-        });
-      }
-
-      //  3: "makes" → "make" error
-      if (
-        text ===
-        "Thank you for considering my application. I am confident that my background and enthusiasm makes me a strong candidate for this position."
-      ) {
-        issues.push({
-          type: "Grammar",
-          message:
-            "Use 'make' instead of 'makes' for plural subject 'background and enthusiasm'.",
-          suggestion: "make",
-          original: "makes",
-        });
+      if (!response.ok) {
+        setErrorMsg(
+          data?.error || "Unable to analyze at this time. Please try again."
+        );
+        setAnalysisResults(null);
+        setIsAnalyzing(false);
+        return;
       }
 
-      // General mock checks for any text
-      if (text.toLowerCase().includes("has worked")) {
-        issues.push({
+      const issues =
+        (data.corrections ?? []).map((correction: any) => ({
           type: "Grammar",
-          message:
-            "Use 'have worked' instead of 'has worked' for plural subject.",
-          suggestion: "have worked",
-          original: "has worked",
-        });
-      }
-      if (text.toLowerCase().includes("there is many")) {
-        issues.push({
-          type: "Grammar",
-          message: "Use 'there are many' instead of 'there is many'.",
-          suggestion: "there are many",
-          original: "there is many",
-        });
-      }
-      if (text.toLowerCase().includes("i has")) {
-        issues.push({
-          type: "Grammar",
-          message: "Use 'I have' instead of 'I has'.",
-          suggestion: "I have",
-          original: "I has",
-        });
-      }
-      if (text.toLowerCase().includes("he go")) {
-        issues.push({
-          type: "Grammar",
-          message: "Use 'he goes' instead of 'he go'.",
-          suggestion: "he goes",
-          original: "he go",
-        });
-      }
-
-      // Improved text: apply all suggestions (simple replace for demo)
-      let improvedText = text;
-      issues.forEach((issue) => {
-        const regex = new RegExp(issue.original, "gi");
-        improvedText = improvedText.replace(regex, issue.suggestion);
-      });
+          message: correction.explanation,
+          suggestion: correction.corrected_phrase,
+          original: correction.original_phrase,
+        })) || [];
 
       setAnalysisResults({
-        improvedText,
+        improvedText: data.corrected_text ?? text,
         issues,
         issuesFound: issues.length,
-        score: issues.length === 0 ? 100 : 85 - issues.length * 5,
+        score:
+          data.score ?? (issues.length === 0 ? 100 : 85 - issues.length * 5),
         wordCount: text.split(" ").filter((word) => word.length > 0).length,
-        readability: "Good",
-        writingTips: [
+        readability: data.readability ?? "Good",
+        writingTips: data.writingTips ?? [
           "Read your text aloud to catch errors",
           "Use active voice when possible",
           "Keep sentences clear and concise",
           "Check subject-verb agreement",
         ],
       });
-
-      setIsAnalyzing(false);
-    }, 1200);
-  };
-
-  const handleApplyFix = (issue: any) => {
-    const regex = new RegExp(issue.original, "gi");
-    const newText = text.replace(regex, issue.suggestion);
-    setText(newText);
-    setAnalysisResults(null);
+    } catch (error) {
+      setErrorMsg("Unable to analyze at this time. Please try again.");
+      setAnalysisResults(null);
+    }
+    setIsAnalyzing(false);
   };
 
   const sampleTexts = [
@@ -277,128 +233,164 @@ export default function GrammarCoachPage() {
               </CardContent>
             </Card>
 
+            {/* Loading State */}
+            {isAnalyzing && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="animate-spin w-8 h-8 text-[#337fa1] mr-2" />
+                <span className="text-[#337fa1] font-semibold text-lg">
+                  Analyzing...
+                </span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {errorMsg && (
+              <div className="bg-red-100 border border-red-300 text-red-700 rounded-lg p-4 mt-6 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             {/* Analysis Results */}
-            {activeTab === "grammar" && analysisResults && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <span>Analysis Results</span>
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-100 text-blue-800"
-                    >
-                      Score: {analysisResults.score} /100
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Issues Block */}
-                  {analysisResults.issuesFound > 0 && (
-                    <div className="space-y-4 border rounded-xl p-4 bg-white">
+            {!isAnalyzing &&
+              !errorMsg &&
+              activeTab === "grammar" &&
+              analysisResults && (
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <span>Analysis Results</span>
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-800"
+                      >
+                        Score: {analysisResults.score} /100
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Issues Block */}
+                    {analysisResults.issuesFound > 0 && (
+                      <div className="space-y-4 border rounded-xl p-4 bg-white">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <AlertCircle className="w-5 h-5 text-yellow-500" />
+                          <span className="font-semibold text-[#112D4F]">
+                            {analysisResults.issuesFound} Issue
+                            {analysisResults.issuesFound > 1 ? "s" : ""} Found
+                          </span>
+                        </div>
+                        {analysisResults.issues.map(
+                          (issue: any, index: number) => (
+                            <div key={index} className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-[#112D4F] text-white"
+                                >
+                                  grammar
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-white text-[#112D4F]"
+                                >
+                                  medium priority
+                                </Badge>
+                                <Button
+                                  className="text-xs bg-[#337fa1] ml-auto"
+                                  onClick={() => handleApplyFix(issue)}
+                                >
+                                  Apply Fix
+                                </Button>
+                              </div>
+                              <div className="text-sm flex items-center gap-2">
+                                <span className="line-through text-red-600">
+                                  "{issue.original}"
+                                </span>
+                                <span className="mx-2">→</span>
+                                <span className="text-green-700">
+                                  "{issue.suggestion}"
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-900">
+                                {issue.message}
+                              </p>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    {/* Perfect Grammar Block */}
+                    {analysisResults.issuesFound === 0 && (
+                      <div className="flex flex-col items-center py-6">
+                        <div className="bg-green-100 rounded-full p-4 mb-2">
+                          <CheckCircle className="w-10 h-10 text-green-500" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-green-600 mb-1">
+                          Perfect Grammar!
+                        </h3>
+                        <p className="text-green-700 text-sm">
+                          No errors found in your text.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Improved Version Block */}
+                    <div>
                       <div className="flex items-center space-x-2 mb-2">
-                        <AlertCircle className="w-5 h-5 text-yellow-500" />
-                        <span className="font-semibold text-[#112D4F]">
-                          {analysisResults.issuesFound} Issue
-                          {analysisResults.issuesFound > 1 ? "s" : ""} Found
+                        <span className="text-green-600">⚡</span>
+                        <span className="text-[#112D4F] font-semibold">
+                          Improved Version
                         </span>
                       </div>
-                      {analysisResults.issues.map(
-                        (issue: any, index: number) => (
-                          <div key={index} className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant="outline"
-                                className="text-xs bg-[#112D4F] text-white"
-                              >
-                                grammar
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className="text-xs text-blue-900"
-                              >
-                                medium priority
-                              </Badge>
-                              <Button
-                                className="text-xs bg-[#337fa1] ml-auto"
-                                onClick={() => handleApplyFix(issue)}
-                              >
-                                Apply Fix
-                              </Button>
-                            </div>
-                            <div className="text-sm flex items-center gap-2">
-                              <span className="line-through text-red-600">
-                                "{issue.original}"
-                              </span>
-                              <span className="mx-2">→</span>
-                              <span className="text-green-700">
-                                "{issue.suggestion}"
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-900">
-                              {issue.message}
-                            </p>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-
-                  {/* Improved Version Block */}
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-green-600">⚡</span>
-                      <span className="text-[#112D4F] font-semibold">
-                        Improved Version
-                      </span>
-                    </div>
-                    <div className="bg-blue-50 rounded-lg p-4 flex flex-col">
-                      <p className="text-md text-[#112D4F] whitespace-pre-line mb-2">
-                        {analysisResults.improvedText}
-                      </p>
-                      <div className="flex space-x-2 mt-2">
-                        <Button
-                          onClick={handleCopy}
-                          className="text-xs bg-[#337fa1] text-black rounded flex items-center"
-                        >
-                          <Copy className="w-4 h-4 mr-1 text-black" />
-                          Copy
-                        </Button>
-                        <Button
-                          onClick={handleDownload}
-                          className="text-xs bg-[#337fa1] text-black rounded flex items-center"
-                        >
-                          <Download className="w-4 h-4 mr-1 text-black" />
-                          Download
-                        </Button>
+                      <div className="bg-blue-50 rounded-lg p-4 flex flex-col">
+                        <p className="text-md text-[#112D4F] whitespace-pre-line mb-2">
+                          {analysisResults.improvedText}
+                        </p>
+                        <div className="flex space-x-2 mt-2">
+                          <Button
+                            onClick={handleCopy}
+                            className="text-xs bg-[#337fa1] text-black rounded flex items-center"
+                          >
+                            <Copy className="w-4 h-4 mr-1 text-white" />
+                            Copy
+                          </Button>
+                          <Button
+                            onClick={handleDownload}
+                            className="text-xs bg-[#337fa1] text-black rounded flex items-center"
+                          >
+                            <Download className="w-4 h-4 mr-1 text-white" />
+                            Download
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Writing Tips Block */}
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Lightbulb className="w-4 h-4 text-yellow-500" />
-                      <span className="font-semibold text-[#112D4F]">
-                        Writing Tips
-                      </span>
+                    {/* Writing Tips Block */}
+                    <div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-500" />
+                        <span className="font-semibold text-[#112D4F]">
+                          Writing Tips
+                        </span>
+                      </div>
+                      <ul className="space-y-2">
+                        {analysisResults.writingTips.map(
+                          (tip: string, idx: number) => (
+                            <li
+                              key={idx}
+                              className="flex items-center space-x-2 text-sm"
+                            >
+                              <Lightbulb className="w-3 h-3 text-yellow-500" />
+                              <span className="text-[#112D4F]">{tip}</span>
+                            </li>
+                          )
+                        )}
+                      </ul>
                     </div>
-                    <ul className="space-y-2">
-                      {analysisResults.writingTips.map(
-                        (tip: string, idx: number) => (
-                          <li
-                            key={idx}
-                            className="flex items-center space-x-2 text-sm"
-                          >
-                            <Lightbulb className="w-3 h-3 text-yellow-500" />
-                            <span className="text-[#112D4F]">{tip}</span>
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Try Sample Texts - Only show in examples tab */}
             {activeTab === "examples" && (
