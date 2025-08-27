@@ -22,6 +22,24 @@ export default function GrammarCoachPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
 
+  const handleDownload = () => {
+    if (!analysisResults?.improvedText) return;
+    const element = document.createElement("a");
+    const file = new Blob([analysisResults.improvedText], {
+      type: "text/plain",
+    });
+    element.href = URL.createObjectURL(file);
+    element.download = "improved-text.txt";
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const handleCopy = () => {
+    if (!analysisResults?.improvedText) return;
+    navigator.clipboard.writeText(analysisResults.improvedText);
+  };
+
   const handleAnalyze = async () => {
     if (!text.trim()) return;
     setActiveTab("grammar");
@@ -30,15 +48,12 @@ export default function GrammarCoachPage() {
     setTimeout(() => {
       const issues = [];
 
-      //  1: No issues
       if (
         text ===
         "I am writing to apply for the position of software developer at your company. I have 3 years experience in programming and I'm very excited about this opportunity."
       ) {
-        // No issues for this example
       }
 
-      //  2: "I has worked" error
       if (
         text ===
         "Dear hiring manager, I want to introduce myself as a candidate for the marketing role. I has worked in various companies and learned many skills."
@@ -126,6 +141,13 @@ export default function GrammarCoachPage() {
     }, 1200);
   };
 
+  const handleApplyFix = (issue: any) => {
+    const regex = new RegExp(issue.original, "gi");
+    const newText = text.replace(regex, issue.suggestion);
+    setText(newText);
+    setAnalysisResults(null);
+  };
+
   const sampleTexts = [
     {
       id: 1,
@@ -171,7 +193,7 @@ export default function GrammarCoachPage() {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              s
+              Practice Examples
             </button>
           </div>
         </div>
@@ -270,58 +292,49 @@ export default function GrammarCoachPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Perfect Grammar */}
-                  {!analysisResults.issuesFound ? (
-                    <div className="flex flex-col items-center py-6">
-                      <div className="bg-green-100 rounded-full p-4 mb-2">
-                        <CheckCircle className="w-10 h-10 text-green-500" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-green-600 mb-1">
-                        Perfect Grammar!
-                      </h3>
-                      <p className="text-green-700 text-sm">
-                        No errors found in your text.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
+                  {/* Issues Block */}
+                  {analysisResults.issuesFound > 0 && (
+                    <div className="space-y-4 border rounded-xl p-4 bg-white">
+                      <div className="flex items-center space-x-2 mb-2">
                         <AlertCircle className="w-5 h-5 text-yellow-500" />
                         <span className="font-semibold text-[#112D4F]">
-                          {analysisResults.issuesFound} Issues Found
+                          {analysisResults.issuesFound} Issue
+                          {analysisResults.issuesFound > 1 ? "s" : ""} Found
                         </span>
                       </div>
                       {analysisResults.issues.map(
                         (issue: any, index: number) => (
-                          <div
-                            key={index}
-                            className="border rounded-lg p-4 bg-gray-50"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-2">
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-[#112D4F]"
-                                >
-                                  grammar
-                                </Badge>
-                                <Badge variant="outline" className=" text-xs">
-                                  <span className="text-blue-900">
-                                    medium priority
-                                  </span>
-                                </Badge>
-                              </div>
+                          <div key={index} className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-[#112D4F] text-white"
+                              >
+                                grammar
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="text-xs text-blue-900"
+                              >
+                                medium priority
+                              </Badge>
+                              <Button
+                                className="text-xs bg-[#337fa1] ml-auto"
+                                onClick={() => handleApplyFix(issue)}
+                              >
+                                Apply Fix
+                              </Button>
                             </div>
-                            <div className="text-sm">
+                            <div className="text-sm flex items-center gap-2">
                               <span className="line-through text-red-600">
                                 "{issue.original}"
                               </span>
                               <span className="mx-2">→</span>
-                              <span className="text-[#112D4F]">
+                              <span className="text-green-700">
                                 "{issue.suggestion}"
                               </span>
                             </div>
-                            <p className="text-xs text-gray-900 mt-1">
+                            <p className="text-xs text-gray-900">
                               {issue.message}
                             </p>
                           </div>
@@ -329,6 +342,60 @@ export default function GrammarCoachPage() {
                       )}
                     </div>
                   )}
+
+                  {/* Improved Version Block */}
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-green-600">⚡</span>
+                      <span className="text-[#112D4F] font-semibold">
+                        Improved Version
+                      </span>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4 flex flex-col">
+                      <p className="text-md text-[#112D4F] whitespace-pre-line mb-2">
+                        {analysisResults.improvedText}
+                      </p>
+                      <div className="flex space-x-2 mt-2">
+                        <Button
+                          onClick={handleCopy}
+                          className="text-xs bg-[#337fa1] text-black rounded flex items-center"
+                        >
+                          <Copy className="w-4 h-4 mr-1 text-black" />
+                          Copy
+                        </Button>
+                        <Button
+                          onClick={handleDownload}
+                          className="text-xs bg-[#337fa1] text-black rounded flex items-center"
+                        >
+                          <Download className="w-4 h-4 mr-1 text-black" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Writing Tips Block */}
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Lightbulb className="w-4 h-4 text-yellow-500" />
+                      <span className="font-semibold text-[#112D4F]">
+                        Writing Tips
+                      </span>
+                    </div>
+                    <ul className="space-y-2">
+                      {analysisResults.writingTips.map(
+                        (tip: string, idx: number) => (
+                          <li
+                            key={idx}
+                            className="flex items-center space-x-2 text-sm"
+                          >
+                            <Lightbulb className="w-3 h-3 text-yellow-500" />
+                            <span className="text-[#112D4F]">{tip}</span>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -354,7 +421,7 @@ export default function GrammarCoachPage() {
                         onClick={() => {
                           setText(sample.text);
                           setActiveTab("examples");
-                          setAnalysisResults(null); // Hide analysis results when switching to examples
+                          setAnalysisResults(null);
                         }}
                       >
                         {sample.title}
