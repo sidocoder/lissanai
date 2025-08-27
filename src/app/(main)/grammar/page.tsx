@@ -30,7 +30,42 @@ export default function GrammarCoachPage() {
     setTimeout(() => {
       const issues = [];
 
-      //"has worked" error
+      //  1: No issues
+      if (
+        text ===
+        "I am writing to apply for the position of software developer at your company. I have 3 years experience in programming and I'm very excited about this opportunity."
+      ) {
+        // No issues for this example
+      }
+
+      //  2: "I has worked" error
+      if (
+        text ===
+        "Dear hiring manager, I want to introduce myself as a candidate for the marketing role. I has worked in various companies and learned many skills."
+      ) {
+        issues.push({
+          type: "Grammar",
+          message: "Use 'I have worked' instead of 'I has worked'.",
+          suggestion: "I have worked",
+          original: "I has worked",
+        });
+      }
+
+      //  3: "makes" → "make" error
+      if (
+        text ===
+        "Thank you for considering my application. I am confident that my background and enthusiasm makes me a strong candidate for this position."
+      ) {
+        issues.push({
+          type: "Grammar",
+          message:
+            "Use 'make' instead of 'makes' for plural subject 'background and enthusiasm'.",
+          suggestion: "make",
+          original: "makes",
+        });
+      }
+
+      // General mock checks for any text
       if (text.toLowerCase().includes("has worked")) {
         issues.push({
           type: "Grammar",
@@ -40,8 +75,6 @@ export default function GrammarCoachPage() {
           original: "has worked",
         });
       }
-
-      // 2: "there is many" error
       if (text.toLowerCase().includes("there is many")) {
         issues.push({
           type: "Grammar",
@@ -50,8 +83,6 @@ export default function GrammarCoachPage() {
           original: "there is many",
         });
       }
-
-      // 3: "i has" error
       if (text.toLowerCase().includes("i has")) {
         issues.push({
           type: "Grammar",
@@ -60,8 +91,6 @@ export default function GrammarCoachPage() {
           original: "I has",
         });
       }
-
-      // 4: "he go" error
       if (text.toLowerCase().includes("he go")) {
         issues.push({
           type: "Grammar",
@@ -142,7 +171,7 @@ export default function GrammarCoachPage() {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Practice Examples
+              s
             </button>
           </div>
         </div>
