@@ -6,6 +6,15 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function POST(req: Request) {
   const { text } = await req.json();
 
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/grammar/check`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }
+  );
+
   const completion = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [

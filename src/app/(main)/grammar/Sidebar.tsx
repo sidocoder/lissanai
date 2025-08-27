@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+
 export default function Sidebar({ analysis }: { analysis: any }) {
   return (
     <div className="space-y-4">
