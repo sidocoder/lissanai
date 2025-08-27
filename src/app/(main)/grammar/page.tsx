@@ -490,7 +490,10 @@ export default function GrammarCoachPage() {
                     and suggest improvements to make your writing shine.
                   </p>
                 </div>
-
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <h4 className="font-large text-black font-semibold">
                     Writing Tips
