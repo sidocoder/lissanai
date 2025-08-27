@@ -1,0 +1,338 @@
+// src/app/email/drafting/page.tsx
+
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import Link from "next/link"; // Import Link
+import { FiCopy, FiRefreshCw } from "react-icons/fi"
+import { BsRobot } from "react-icons/bs"
+import { AiOutlineCheckCircle } from "react-icons/ai"
+import toast, { Toaster } from "react-hot-toast";
+import { IEmailProcessResponse } from "@/types";
+
+export default function EmailDraftingPage() {
+  const [emailType, setEmailType] = useState("Business")
+  const [recipient, setRecipient] = useState("Manager")
+  const [purpose, setPurpose] = useState("Schedule a meeting")
+  const [userInput, setUserInput] = useState("")
+  const [generatedEmail, setGeneratedEmail] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const handleGenerateEmail = async () => {
+    if (!userInput.trim()) {
+      toast.error("Please describe what you want to write about.");
+      return;
+    }
+
+    setIsGenerating(true);
+    const loadingToast = toast.loading("LissanAI is drafting your email...");
+
+    try {
+      const prompt = `
+        Email Type: ${emailType}
+        Recipient: ${recipient}
+        Purpose: ${purpose}
+        User's specific request: ${userInput}
+      `;
+
+      const response = await fetch('/api/email/draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          type: 'GENERATE',
+          template_type: emailType,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Something went wrong.");
+      }
+
+      const data: IEmailProcessResponse = result;
+      setGeneratedEmail(data.generated_email);
+      toast.success("Your email has been generated!");
+
+    } catch (error: any) {
+      console.error("Failed to generate email:", error);
+      toast.error(error.message || "Failed to generate email.");
+    } finally {
+      setIsGenerating(false);
+      toast.dismiss(loadingToast);
+    }
+  };
+
+  const handleClear = () => {
+    setUserInput("")
+    setGeneratedEmail("")
+  }
+
+  const handleCopyEmail = () => {
+    if (!generatedEmail) {
+        toast.error("Nothing to copy!");
+        return;
+    }
+    navigator.clipboard.writeText(generatedEmail)
+    toast.success("Email copied to clipboard!");
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-center" />
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-2">
+              <Image
+                src="/images/lisan.jpg"
+                alt="LissanAI Mascot"
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <span className="text-xl font-bold text-gray-900">LissanAI</span>
+            </div>
+            <nav className="hidden md:flex space-x-6">
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                Mock Interviews
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                Grammar Coach
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                Learn
+              </a>
+              <a href="#" className="text-teal-600 font-medium border-b-2 border-teal-600 pb-1">
+                Email Drafting
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                Pronunciation
+              </a>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Email Writing Assistant Header */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 mx-auto mb-4">
+            <Image
+              src="/images/lisan.jpg"
+              alt="LissanAI Email Assistant"
+              width={80}
+              height={80}
+              className="w-full h-full rounded-full object-cover"
+            />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Email Writing Assistant</h1>
+          <p className="text-gray-600">Great work! Your email looks professional and polite. Ready to send?</p>
+
+          <div className="flex items-center justify-center space-x-1 mt-2">
+            <span className="text-yellow-400">★★★★★</span>
+            <span className="text-sm text-gray-500 ml-2">Excellent</span>
+            <span className="text-sm text-gray-500 ml-4">95 Points</span>
+          </div>
+        </div>
+
+        {/* Form Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Type</label>
+            <p className="text-xs text-gray-500 mb-2">What type of email do you want to write?</p>
+            <select
+              value={emailType}
+              onChange={(e) => setEmailType(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            >
+              <option value="Business">Business</option>
+              <option value="Formal">Formal</option>
+              <option value="Inquiry">Inquiry</option>
+              <option value="Application">Application</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Recipient</label>
+            <p className="text-xs text-gray-500 mb-2">Who are you writing to?</p>
+            <input
+              type="text"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              placeholder="Manager"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+            <p className="text-xs text-gray-500 mb-2">What is the purpose of your email?</p>
+            <input
+              type="text"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              placeholder="Schedule a meeting to discuss the project requirement"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center space-x-4 mb-8">
+          <button
+            onClick={handleGenerateEmail}
+            disabled={isGenerating}
+            className="flex items-center space-x-2 bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50"
+          >
+            {isGenerating ? <FiRefreshCw className="w-4 h-4 animate-spin" /> : <BsRobot className="w-4 h-4" />}
+            <span>{isGenerating ? "Generating..." : "Generate from Amharic"}</span>
+          </button>
+          
+          {/* --- MODIFIED BUTTON --- */}
+          <Link
+            href={{
+              pathname: '/email/writing',
+              query: { text: generatedEmail },
+            }}
+            onClick={(e) => !generatedEmail && e.preventDefault()}
+            className={`flex items-center space-x-2 bg-gray-100 text-gray-700 px-6 py-2 rounded-lg transition-colors ${
+              !generatedEmail
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-gray-200'
+            }`}
+            aria-disabled={!generatedEmail}
+          >
+            <span>Improve English Text</span>
+          </Link>
+          {/* --- END MODIFICATION --- */}
+
+        </div>
+
+        {/* Main Content - Dual Pane */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Left Pane - Input */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Describe in Amharic/English</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Tell me what you want to write in a sentence, and Ill create a professional email for you.
+            </p>
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="Describe what you want to write about..."
+              className="w-full h-64 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+            />
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={handleGenerateEmail}
+                disabled={isGenerating}
+                className="flex items-center space-x-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50"
+              >
+                {isGenerating ? <FiRefreshCw className="w-4 h-4 animate-spin" /> : <BsRobot className="w-4 h-4" />}
+                <span>Generate Email (AI)</span>
+              </button>
+              <button onClick={handleClear} className="text-gray-500 hover:text-gray-700">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Right Pane - Generated Email */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Professional English Email</h2>
+            <p className="text-sm text-gray-600 mb-4">This is what your final email will look like:</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 h-64 overflow-y-auto">
+              {generatedEmail ? (
+                <pre className="whitespace-pre-wrap text-sm text-gray-900">{generatedEmail}</pre>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>
+                    Your AI-generated email will appear here...
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={handleCopyEmail}
+                className="flex items-center space-x-1 text-gray-600 hover:text-gray-800"
+              >
+                <FiCopy className="w-4 h-4" />
+                <span>Copy Email</span>
+              </button>
+              <button className="flex items-center space-x-1 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">
+                <span>Professional Mode</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Email Writing Tips */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-6">
+            <Image
+              src="/images/lisan.jpg"
+              alt="LissanAI Tips"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+            <h2 className="text-lg font-semibold text-gray-900">Lissans Email Writing Tips</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900 mb-3">What to include in Amharic:</h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <AiOutlineCheckCircle className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">Mention the main idea, even if writing requires skill</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <AiOutlineCheckCircle className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">Use specific situations or background</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <AiOutlineCheckCircle className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">Add details you want included in the email</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <AiOutlineCheckCircle className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">Any deadlines or time constraints</span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900 mb-3">Lissan will automatically:</h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <span className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0">✨</span>
+                  <span className="text-sm text-gray-700">Use professional tone and language</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0">📝</span>
+                  <span className="text-sm text-gray-700">Structure the email properly</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0">🎯</span>
+                  <span className="text-sm text-gray-700">Add appropriate greetings and closing</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0">🌟</span>
+                  <span className="text-sm text-gray-700">Ensure grammatically correct English</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
