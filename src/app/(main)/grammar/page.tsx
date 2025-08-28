@@ -206,7 +206,7 @@ export default function GrammarCoachPage() {
                       />
                     </div>
                     <div className="flex items-center text-xs text-black bg-[#D9E0ED] rounded-full mt-2 px-3 py-1 font-medium shadow">
-                      🗣️ Listen carefully
+                      🗣️ Just write
                     </div>
                   </div>
                 </div>
@@ -482,7 +482,7 @@ export default function GrammarCoachPage() {
                       />
                     </div>
                     <div className="flex items-center text-xs text-black bg-[#D9E0ED] rounded-full mt-2 px-3 py-1 font-medium shadow">
-                      🗣️ Listen carefully
+                      🗣️ Write your text
                     </div>
                   </div>
                   <p className="text-sm text-gray-600 text-center">
