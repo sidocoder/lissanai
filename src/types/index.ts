@@ -38,4 +38,5 @@ export interface IEmailProcessRequest {
 export interface IEmailProcessResponse {
   generated_email: string;
   subject: string;
+  body: string;
 }

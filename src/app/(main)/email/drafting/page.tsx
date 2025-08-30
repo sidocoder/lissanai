@@ -1,4 +1,3 @@
-// src/app/email/drafting/page.tsx
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
@@ -86,7 +85,7 @@ export default function EmailDraftingPage() {
       }
 
       const data: IEmailProcessResponse = result;
-      setGeneratedEmail(data.generated_email);
+       setGeneratedEmail(data.body); 
       toast.success("Your email has been generated!");
 
     } catch (error: any) {
@@ -165,26 +164,19 @@ export default function EmailDraftingPage() {
             <FaWandMagicSparkles />
             Generate Email 
           </button>
+          
           <Link
-            href={{
-              pathname: '/email/writing',
-              query: { text: generatedEmail },
-            }}
-            onClick={(e) => !generatedEmail && e.preventDefault()}
-            className={`flex-1 flex items-center justify-center gap-2 text-gray-600 px-4 py-2 font-semibold transition-all rounded-md ${
-              !generatedEmail
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:bg-white hover:shadow'
-            }`}
-            aria-disabled={!generatedEmail}
+            href="/email/writing"
+            className="flex-1 flex items-center justify-center gap-2 text-gray-600 px-4 py-2 font-semibold transition-all rounded-md hover:bg-white hover:shadow"
           >
             <FiZap />
             Improve English Text
           </Link>
+          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-           
+            {/* Email Type Card */}
             <div className="bg-white border border-green-200 rounded-lg shadow-sm p-6">
                 <h2 className="text-md font-semibold text-gray-800 mb-1">Email Type</h2>
                 <p className="text-sm text-gray-500 mb-4">Choose the type of email you want to write</p>
@@ -228,7 +220,7 @@ export default function EmailDraftingPage() {
                 </div>
             </div>
             
-           
+            {/* Tone Card */}
             <div className="bg-white border border-green-200 rounded-lg shadow-sm p-6">
                 <h2 className="text-md font-semibold text-gray-800 mb-1">Tone</h2>
                 <p className="text-sm text-gray-500 mb-4">Select the tone of the email</p>
@@ -268,7 +260,7 @@ export default function EmailDraftingPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-         
+          {/* Left Pane - Input */}
           <div className="bg-white rounded-lg border border-green-200 shadow-sm p-6">
             <h2 className="text-md font-semibold text-gray-800 flex items-center gap-2 mb-1"><FiPlusCircle /> Describe in Amharic/English</h2>
             <p className="text-sm text-gray-500 mb-4">Tell me what you want to write in Amharic, and Ill create a professional English email for you!</p>
@@ -294,7 +286,7 @@ export default function EmailDraftingPage() {
             </div>
           </div>
 
-         
+          {/* Right Pane - Generated Email */}
           <div className="bg-white rounded-lg border border-green-200 shadow-sm p-6">
             <h2 className="text-md font-semibold text-gray-800 flex items-center gap-2 mb-4">
                 <FiCheck /> Professional English Email
@@ -318,7 +310,6 @@ export default function EmailDraftingPage() {
                 <FiCopy />
                 <span>Copy Email</span>
               </button>
-              
               <Link
                 href={{
                   pathname: '/email/writing',
@@ -335,7 +326,6 @@ export default function EmailDraftingPage() {
                 <FiZap />
                 <span>Professional Quality</span>
               </Link>
-              
             </div>
           </div>
         </div>

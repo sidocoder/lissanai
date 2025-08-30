@@ -1,4 +1,4 @@
-// src/app/api/email/write/route.ts
+
 
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
@@ -23,15 +23,15 @@ export async function POST(request: NextRequest) {
     }
 
 
-    const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/email/process`, {
+    const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/email/edit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token.accessToken}`,
       },
       body: JSON.stringify({
-        prompt: prompt,
-        type: 'EDIT', 
+        draft: prompt,
+        // type: 'EDIT', 
       }),
     });
 

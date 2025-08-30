@@ -1,4 +1,3 @@
-// src/app/email/writing/page.tsx
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
@@ -22,7 +21,7 @@ function WritingForm() {
   const [improvedText, setImprovedText] = useState<IEmailProcessResponse | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  // This effect runs once to populate the text area from the URL
+
   useEffect(() => {
     if (initialText) {
       setInputText(initialText)
@@ -74,7 +73,7 @@ function WritingForm() {
   
   const handleCopyImprovedEmail = () => {
     if (!improvedText) return;
-    const fullEmail = `Subject: ${improvedText.subject}\n\n${improvedText.generated_email}`;
+    const fullEmail = `Subject: ${improvedText.subject}\n\n${improvedText.body}`;
     navigator.clipboard.writeText(fullEmail);
     toast.success("Improved email copied!");
   }
@@ -130,7 +129,7 @@ function WritingForm() {
             <div>
               <label className="text-sm font-medium text-gray-700">Improved Email Body</label>
               <div className="mt-1 p-3 bg-gray-50 border rounded-md text-sm text-gray-800 h-48 overflow-y-auto">
-                <pre className="whitespace-pre-wrap font-sans">{improvedText.generated_email}</pre>
+                <pre className="whitespace-pre-wrap font-sans">{improvedText.body}</pre>
               </div>
             </div>
             <button

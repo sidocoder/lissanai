@@ -1,4 +1,3 @@
-// src/app/api/email/draft/route.ts
 
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
@@ -23,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
   
-    const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/email/process`, {
+    const apiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/email/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
