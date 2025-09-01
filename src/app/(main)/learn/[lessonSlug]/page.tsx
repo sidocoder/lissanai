@@ -7,8 +7,9 @@ import Link from "next/link";
 import React from 'react';
 import Header from "@/components/Header";
 import { FiChevronDown, FiHash } from "react-icons/fi";
+import { FaLightbulb } from "react-icons/fa"; 
 
-import { learnPageLessons, type Lesson, type SubTopic } from "@/constants/index";
+import { learnPageLessons, learnPageTips, type Lesson, type SubTopic } from "@/constants/index";
 
 
 const slugify = (text: string) =>
@@ -16,7 +17,6 @@ const slugify = (text: string) =>
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '');
-
 
     
 interface AccordionItemProps {
@@ -26,17 +26,17 @@ interface AccordionItemProps {
 }
 
 const AccordionItem = ({ topic, isOpen, onToggle }: AccordionItemProps) => (
-    <div className="border-b border-gray-200 last:border-b-0">
+    <div>
         <button 
             onClick={onToggle}
-            className="w-full text-left bg-transparent p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
+            className="w-full text-left bg-blue-100/60 border border-blue-200 rounded-lg p-4 flex justify-between items-center hover:bg-blue-100 transition-colors shadow-sm shadow-blue-100"
         >
             <h3 className="font-bold text-gray-800">{topic.title}</h3>
-            <FiChevronDown className={`text-gray-500 w-6 h-6 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+            <FiChevronDown className={`text-gray-600 w-6 h-6 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
         </button>
         
         <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-screen' : 'max-h-0'}`}>
-            <div className="p-4 pt-0">
+            <div className="p-4 pt-4">
                 <p className="text-gray-600 mb-4">{topic.explanation}</p>
                 
                 {topic.examples && topic.examples.length > 0 && (
@@ -95,7 +95,7 @@ export default function LessonDetailPage() {
 
         <div className="bg-blue-100/50 border border-blue-200 rounded-lg p-6 flex items-center justify-between mb-10">
             <p className="text-gray-700 max-w-lg">
-                Welcome to the {pageTitle} lesson! Here you will learn essential concepts to improve your English communication skills.
+                Welcome to the {pageTitle} section! Here you will learn essential concepts to improve your English communication skills.
             </p>
             <div className="hidden sm:block">
                 <Image 
@@ -108,21 +108,19 @@ export default function LessonDetailPage() {
             </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="divide-y divide-gray-200">
 
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-10">
+            <div className="space-y-4">
                 {lesson.subTopics.map((topic) => (
                     <AccordionItem 
                         key={topic.title} 
-                        topic={topic} 
+                        topic={topic}
                         isOpen={openAccordion === topic.title}
                         onToggle={() => setOpenAccordion(openAccordion === topic.title ? null : topic.title)}
                     />
                 ))}
-                
             </div>
         </div>
-
       </main>
     </div>
   );
