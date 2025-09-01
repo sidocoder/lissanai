@@ -164,7 +164,7 @@ export default function Dashboard() {
                 Write professional emails
               </p>
             </div>
-            <Link href="/writing">
+            <Link href="/email/drafting">
               <button className="w-full bg-gray-100 text-gray-700 font-semibold px-5 py-2 rounded-full gap-2 shadow hover:bg-gray-200 text-base">
                 Draft Email →
               </button>
