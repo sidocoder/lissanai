@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,7 +8,7 @@ import Link from "next/link";
 import React from 'react';
 import Header from "@/components/Header";
 import { FiChevronDown, FiHash } from "react-icons/fi";
-import { FaLightbulb } from "react-icons/fa"; 
+import { FaLightbulb } from "react-icons/fa";
 
 import { learnPageLessons, learnPageTips, type Lesson, type SubTopic } from "@/constants/index";
 
@@ -17,6 +18,7 @@ const slugify = (text: string) =>
     .toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '');
+
 
     
 interface AccordionItemProps {
@@ -93,18 +95,31 @@ export default function LessonDetailPage() {
           <h1 className="text-4xl font-extrabold text-gray-900">{pageTitle}</h1>
         </div>
 
-        <div className="bg-blue-100/50 border border-blue-200 rounded-lg p-6 flex items-center justify-between mb-10">
+
+        <div className="relative bg-blue-100/50 border border-blue-200 rounded-2xl p-6 pr-28 sm:pr-32 mb-12 shadow-sm">
             <p className="text-gray-700 max-w-lg">
                 Welcome to the {pageTitle} section! Here you will learn essential concepts to improve your English communication skills.
             </p>
-            <div className="hidden sm:block">
-                <Image 
-                    src="/images/mascot.png" 
-                    alt="Mascot" 
-                    width={80} 
-                    height={80} 
-                    className="w-20 h-20 object-contain" 
-                />
+
+
+            <div className="absolute -top-6 -right-6 sm:-right-8 w-24 h-24 sm:w-28 sm:h-28 pointer-events-none">
+              
+              
+              <div className="w-full h-full p-1.5 bg-gradient-to-tr from-green-400 to-white rounded-full shadow-lg">
+                
+                
+                <div className="w-full h-full bg-white rounded-full">
+                
+                
+                  <Image
+                      src="/images/mascot.png"
+                      alt="Mascot"
+                      width={112}
+                      height={112}
+                      className="w-full h-full object-contain rounded-full"
+                  />
+                </div>
+              </div>
             </div>
         </div>
 
@@ -121,6 +136,45 @@ export default function LessonDetailPage() {
                 ))}
             </div>
         </div>
+
+        <div className="mt-12 bg-white rounded-xl shadow-sm border-2 border-blue-200 p-6 relative">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex-grow w-full">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 flex items-center justify-center bg-yellow-100 rounded-full">
+                      <FaLightbulb className="w-5 h-5 text-yellow-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800">Tips for Practice</h3>
+                  </div>
+                  <ul className="space-y-3 pl-4">
+                      {learnPageTips.map(tip => (
+                          <li key={tip} className="flex items-start gap-3">
+                              <div className="w-5 h-5 flex items-center justify-center bg-yellow-100 rounded-full flex-shrink-0 mt-0.5">
+                                <FaLightbulb className="w-3 h-3 text-yellow-500" />
+                              </div>
+                              <span className="text-sm text-gray-600">{tip}</span>
+                          </li>
+                      ))}
+                  </ul>
+              </div>
+
+              <div className="relative flex-shrink-0 flex items-center justify-center md:justify-end mt-6 md:mt-0 w-full md:w-auto">
+                  <div className="bg-blue-100 text-blue-800 font-semibold py-3 px-5 rounded-xl shadow-sm mr-4">
+                      Lets Learn Together!
+                  </div>
+                  <div className="w-24 h-24">
+                    <Image 
+                        src="/images/mascot.png" 
+                        alt="Mascot encouraging learning" 
+                        width={96} 
+                        height={96} 
+                        className="w-full h-full object-contain" 
+                    />
+                  </div>
+              </div>
+          </div>
+        </div>
+
       </main>
     </div>
   );
