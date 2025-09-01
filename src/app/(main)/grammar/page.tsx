@@ -55,14 +55,14 @@ export default function GrammarCoachPage() {
     setIsAnalyzing(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/grammar/check`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-        }
-      );
+      const response = await fetch(`/api/grammar/check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GRAMMAR_API_TOKEN}`,
+        },
+        body: JSON.stringify({ text }),
+      });
       const data = await response.json();
 
       if (!response.ok) {
