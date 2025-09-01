@@ -24,3 +24,19 @@ export interface IAuthResponse {
   expires_in: number;
   user: IUser;
 }
+
+export type TEmailProcessType = 'GENERATE' | 'EDIT';
+
+
+export interface IEmailProcessRequest {
+  prompt: string;
+  type: TEmailProcessType;
+  template_type?: string; 
+  tone?: string;         
+}
+
+export interface IEmailProcessResponse {
+  generated_email: string;
+  subject: string;
+  body: string;
+}
