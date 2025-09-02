@@ -1,23 +1,63 @@
+"use client";
+
+
+
+import { useState, useEffect, useRef } from "react";
+
+
 import Header from "@/components/Header"
 import Image from "next/image"
 import { FaHeadphones, FaMicrophone, FaPlay } from "react-icons/fa"
 
+
+import { FiCheckCircle, FiRefreshCw, FiXCircle } from "react-icons/fi";
+
+
+
+
+
+
+interface PracticeSentence {
+  id: string;
+  text: string;
+}
+
+interface AssessmentFeedback {
+  full_feedback_summary: string;
+  mispronouncedwords: string[];
+  overall_accuracy_score: number;
+}
+
+
+
+type RecordingStatus = "idle" | "recording" | "processing" | "completed";
+
+
 export default function PronunciationPage() {
+  
+    
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [practiceSentence, setPracticeSentence] = useState<PracticeSentence | null>(null);
+  const [feedback, setFeedback] = useState<AssessmentFeedback | null>(null);
+
+  const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>("idle");
+  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+
+  
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       <Header />
 
-
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
+        
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900">Practice Progress</h1>
             <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">Word 1 of 4</div>
           </div>
-
 
           <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
             <div className="bg-blue-600 h-3 rounded-full" style={{ width: "25%" }}></div>
@@ -35,7 +75,7 @@ export default function PronunciationPage() {
               </div>
               <p className="text-sm text-gray-600">Vowel Sounds • beginner</p>
             </div>
-            
+
             <div className="flex flex-col items-center">
               <div className="w-20 h-20 rounded-full overflow-hidden bg-white shadow-sm">
                 <Image
@@ -85,8 +125,8 @@ export default function PronunciationPage() {
           </div>
         </div>
 
-    
-            <div className="bg-gray-100 rounded-lg p-6 text-center">
+
+        <div className="bg-gray-100 rounded-lg p-6 text-center">
           <h4 className="font-medium text-gray-900 mb-2">Example Sentence:</h4>
           <p className="text-gray-700 italic">I have three computers on my desk.</p>
         </div>
