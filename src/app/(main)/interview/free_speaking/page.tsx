@@ -1,0 +1,338 @@
+"use client";
+import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import VoiceCircle from "./VoiceCircle"; // Assuming VoiceCircle.tsx is in the same folder
+
+// Define the conversation states
+type ConversationState = "idle" | "recording" | "processing" | "responding";
+
+// --- Configuration Constants ---
+const SILENCE_THRESHOLD = 0.01; // The volume level to be considered "silent"
+const SILENCE_DURATION_MS = 2000; // 2 seconds of silence triggers the end of speech
+
+// ------------------ HEADER COMPONENT ------------------
+const Header: React.FC = () => (
+  <header className="w-full bg-white shadow-sm px-8 py-3 flex items-center justify-between">
+    <Image src="/images/logo.png" alt="Mascot" width={130} height={130} />
+    <nav className="flex space-x-6 text-gray-600 font-medium">
+      <a href="#" className="hover:text-blue-500">Mock Interviews</a>
+      <a href="#" className="hover:text-blue-500">Grammar Coach</a>
+      <a href="#" className="hover:text-blue-500">Learn</a>
+      <a href="#" className="hover:text-blue-500">Email Drafting</a>
+      <a href="#" className="hover:text-blue-500">Pronunciation</a>
+    </nav>
+  </header>
+);
+
+// ------------------ MAIN PAGE COMPONENT ------------------
+const FreeSpeaking: React.FC = () => {
+    const router = useRouter();
+    
+    // --- State Management ---
+    const [conversationState, setConversationState] = useState<ConversationState>("idle");
+    const [aiAudioElement, setAiAudioElement] = useState<HTMLAudioElement | null>(null);
+    const [userVolume, setUserVolume] = useState(0); // Real-time volume for UI feedback
+
+    // --- Refs for managing persistent objects and timers ---
+    const socketRef = useRef<WebSocket | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+
+    // --- Core Logic: Microphone Monitoring & Silence Detection ---
+    const monitorMicrophone = () => {
+        if (mediaRecorderRef.current?.state !== "recording" || !analyserRef.current) {
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            return;
+        }
+
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteTimeDomainData(dataArray);
+
+        // Calculate RMS to get the volume
+        let sum = 0;
+        for (const value of dataArray) {
+            const normalizedValue = (value - 128) / 128; // Normalize to -1 to 1
+            sum += normalizedValue * normalizedValue;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        
+        // Update state for real-time UI feedback
+        setUserVolume(rms);
+
+        // Check for silence to auto-stop recording
+        if (rms < SILENCE_THRESHOLD) {
+            if (!silenceTimerRef.current) {
+                silenceTimerRef.current = setTimeout(() => {
+                    console.log("Silence detected. Stopping recording.");
+                    stopUserRecording();
+                }, SILENCE_DURATION_MS);
+            }
+        } else {
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+            }
+        }
+        animationFrameRef.current = requestAnimationFrame(monitorMicrophone);
+    };
+
+    // --- Core Logic: Start the Conversation ---
+    const startConversation = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            const wsUrl = process.env.NEXT_PUBLIC_WS_BASE_URL || "https://lissan-ai-backend-dev.onrender.com/api/v1/ws/conversation";
+            const socket = new WebSocket(wsUrl);
+            socketRef.current = socket;
+
+            socket.onopen = () => {
+                console.log("WebSocket connection established.");
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+                mediaRecorderRef.current = mediaRecorder;
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                        socket.send(event.data);
+                    }
+                };
+                mediaRecorder.start(500);
+                setConversationState("recording");
+
+                // Setup Web Audio API to analyze microphone input
+                const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+                audioContextRef.current = audioContext;
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+                analyserRef.current = analyser;
+
+                // Start the monitoring loop
+                monitorMicrophone();
+            };
+
+            socket.onmessage = (event) => {
+                if (typeof event.data === "string") {
+                    const message = JSON.parse(event.data);
+                    if (message.status === "processing") {
+                        setConversationState("processing");
+                    }
+                } else if (event.data instanceof Blob) {
+                    const audioUrl = URL.createObjectURL(event.data);
+                    const newAiAudio = new Audio(audioUrl);
+                    setAiAudioElement(newAiAudio);
+                    setConversationState("responding");
+                    newAiAudio.play();
+                    newAiAudio.onended = () => {
+                        setConversationState("idle");
+                        setAiAudioElement(null);
+                    };
+                }
+            };
+            
+            socket.onclose = () => { console.log("WebSocket closed."); cleanUp(); };
+            socket.onerror = (error) => { console.error("WebSocket error:", error); cleanUp(); };
+
+        } catch (err) {
+            console.error("Microphone access denied:", err);
+            alert("Microphone access is required for this feature.");
+        }
+    };
+
+    // --- Core Logic: Stop User Recording (Manual or Automatic) ---
+    const stopUserRecording = () => {
+        // Stop the monitoring loop and timers
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        setUserVolume(0); // Reset volume for UI
+        
+        if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+        }
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify({ type: "end_of_speech" }));
+            setConversationState("processing");
+        }
+        audioContextRef.current?.close(); // Clean up audio resources
+    };
+
+    // --- Core Logic: Full Cleanup ---
+    const cleanUp = () => {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+            socketRef.current.close();
+        }
+        audioContextRef.current?.close();
+
+        // Reset all states
+        setConversationState("idle");
+        setAiAudioElement(null);
+        setUserVolume(0);
+    };
+
+    // Ensure cleanup happens when the component is unmounted
+    useEffect(() => { return () => cleanUp(); }, []);
+
+    // --- UI Interaction Handler ---
+    const handleCircleClick = () => {
+        if (conversationState === 'idle') {
+            startConversation();
+        } else if (conversationState === 'recording') {
+            stopUserRecording();
+        }
+    };
+
+    // --- JSX Rendering ---
+    return (
+        <div className="flex flex-col items-center p-6">
+            <Image src="/images/mascot_img.png" alt="Mascot" width={120} height={120} className="mt-6" />
+            <h2 className="text-4xl font-bold mt-4 text-black">🎤 Free Speaking Practice</h2>
+            <MessageBox />
+            <ModeToggle />
+
+            {/* --- Main Interactive Area --- */}
+            <div className="flex flex-col items-center mt-10 rounded-2xl p-8 w-full max-w-xl transition-shadow duration-500"
+                style={{
+                    boxShadow: conversationState === 'recording' ? '0 0 25px #FF9196' 
+                             : conversationState === 'idle' ? '0 0 25px rgba(78, 195, 253, 0.8)' 
+                             : '0 0 15px #c8c8c8'
+                }}
+            >
+                {/* The new, professional Voice Circle component */}
+                <VoiceCircle 
+                    state={conversationState} 
+                    onClick={handleCircleClick}
+                    userVolume={userVolume}
+                    aiAudioElement={aiAudioElement}
+                />
+
+                {/* --- Dynamic Helper Text & Controls --- */}
+                {conversationState === "idle" && <p className="mt-4 text-gray-600 text-sm">Click to start speaking</p>}
+                
+                {conversationState === "recording" && (
+                    <>
+                        <h2 className="mt-6 text-xl font-bold text-gray-800">Listening...</h2>
+                        <p className="mt-2 text-gray-600 text-base">Stop talking to send, or click the circle.</p>
+                    </>
+                )}
+                
+                {conversationState === "processing" && <p className="mt-4 text-gray-600 text-base italic">Lissan is thinking...</p>}
+                
+                {conversationState === "responding" && aiAudioElement && (
+                     <div className="w-full mt-6">
+                        <h2 className="font-semibold text-gray-800 text-center mb-2">Lissan&apos;s Response:</h2>
+                        {/* We hide the default audio player but keep it in the DOM for the visualization */}
+                        <audio controls src={aiAudioElement.src} className="w-full" style={{ display: 'none' }} />
+                    </div>
+                )}
+                 {/* End session button appears after the first interaction */}
+                 {(conversationState === 'processing' || conversationState === 'responding') && (
+                     <button
+                        className="mt-6 px-6 py-2 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition"
+                        onClick={cleanUp}
+                    >
+                        End Session
+                    </button>
+                 )}
+            </div>
+
+            <FooterControls />
+        </div>
+    );
+};
+
+// ------------------ MESSAGE BOX COMPONENT ------------------
+const MessageBox: React.FC = () => (
+    <div className="flex items-center mt-4 space-x-6 w-full max-w-5xl mx-auto">
+        <Image src="/images/mascot_img.png" alt="Mascot" width={56} height={56} />
+        <div className="rounded-xl py-3 px-6 shadow flex-1" style={{ backgroundColor: "#DDFFEF", border: "2px solid #A7F3D0" }}>
+            <p className="text-gray-700 font-medium text-center">Let's practice speaking! Click the microphone to start.</p>
+        </div>
+    </div>
+);
+
+// ------------------ MODE TOGGLE COMPONENT ------------------
+const ModeToggle: React.FC = () => {
+    const router = useRouter();
+    const [mode, setMode] = useState<"interview" | "free">("free");
+
+    const handleModeChange = (newMode: "interview" | "free") => {
+        setMode(newMode);
+        if (newMode === "interview") router.push("./mock");
+        else router.push("/free_speaking");
+    };
+
+    return (
+        <div className="flex mt-6 px-0.5 py-0.5 rounded-lg border-2 border-gray-300">
+            <button
+                className={`flex items-center px-10 py-2 rounded-lg font-medium transition-all duration-300 ${
+                mode === "interview"
+                    ? "bg-[#39647E] text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+                onClick={() => handleModeChange("interview")}
+            >
+                <Image
+                    src={
+                        mode === "interview"
+                        ? "/images/interview_active.png"
+                        : "/images/interview_inactive.png"
+                    }
+                    alt="Mock Interview"
+                    width={24}
+                    height={24}
+                    className="mr-2"
+                />
+                Mock Interview
+            </button>
+
+            <button
+                className={`flex items-center px-10 py-2 rounded-lg font-medium transition-all duration-300 ${
+                mode === "free"
+                    ? "bg-[#39647E] text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+                onClick={() => handleModeChange("free")}
+            >
+                <Image
+                    src={
+                        mode === "free"
+                        ? "/images/voice_active.png"
+                        : "/images/voice_inactive.png"
+                    }
+                    alt="Free Speaking"
+                    width={24}
+                    height={24}
+                    className="mr-2"
+                />
+                Free Speaking
+            </button>
+        </div>
+    );
+};
+
+// ------------------ FOOTER COMPONENT ------------------
+const FooterControls: React.FC = () => (
+  <div className="flex items-center justify-center mt-12 w-full max-w-2xl mx-auto">
+    <p className="text-orange-500 text-sm text-center">
+      🔥 Keep practicing to maintain your streak!
+    </p>
+  </div>
+);
+
+// ------------------ APP ROOT COMPONENT ------------------
+const App: React.FC = () => (
+  <div className="min-h-screen bg-gray-50">
+    <Header />
+    <FreeSpeaking />
+  </div>
+);
+
+export default App;
