@@ -1,14 +1,13 @@
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header"
 import Image from "next/image"
 import { FaHeadphones, FaMicrophone, FaPlay } from "react-icons/fa"
-import { FiRefreshCw } from "react-icons/fi";
-import toast, { Toaster } from "react-hot-toast"; 
+import { FiRefreshCw, FiSquare, FiCircle } from "react-icons/fi"; 
+import toast, { Toaster } from "react-hot-toast";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 
 
@@ -33,20 +32,19 @@ export default function PronunciationPage() {
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>("idle");
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-
+  const audioChunksRef = useRef<Blob[]>([]); 
+  
 
   const fetchSentence = async () => {
     setIsLoading(true);
     setError(null);
-    setFeedback(null); 
-    
+    setFeedback(null);
+    setRecordedAudio(null);
+    setRecordingStatus("idle");
     try {
       const response = await fetch('/api/pronunciation/sentence');
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch new sentence.');
-      }
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch new sentence.');
       setPracticeSentence(data);
     } catch (err: any) {
       setError(err.message);
@@ -56,15 +54,65 @@ export default function PronunciationPage() {
     }
   };
 
-  
   useEffect(() => {
     fetchSentence();
   }, []);
-  
 
 
+  const handleStartRecording = async () => {
+    setRecordedAudio(null);
+    setFeedback(null);
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        audioChunksRef.current = [];
+
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+
+        mediaRecorderRef.current.onstop = () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          setRecordedAudio(audioBlob);
+
+        };
+
+        mediaRecorderRef.current.start();
+        setRecordingStatus("recording");
+        toast.success("Recording started!");
+
+      } catch (err) {
+        console.error("Error accessing microphone:", err);
+        toast.error("Could not access microphone. Please allow permission in your browser.");
+      }
+    } else {
+      toast.error("Audio recording is not supported by your browser.");
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && recordingStatus === "recording") {
+      mediaRecorderRef.current.stop();
+      
+      
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setRecordingStatus("processing"); 
+      
+      toast("Recording stopped. Processing...", { icon: '🤖' });
+    }
+  };
+
+
+  const handleRecordButtonClick = () => {
+    if (recordingStatus === "recording") {
+      handleStopRecording();
+    } else {
+      handleStartRecording();
+    }
+  };
   
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-center" />
@@ -72,8 +120,6 @@ export default function PronunciationPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-  
-  
         {isLoading ? (
           <div className="text-center py-20">
             <FiRefreshCw className="w-8 h-8 mx-auto animate-spin text-blue-600" />
@@ -91,10 +137,7 @@ export default function PronunciationPage() {
             </button>
           </div>
         ) : practiceSentence ? (
-
-            <>
-
-
+          <>
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold text-gray-900">Practice Progress</h1>
@@ -103,9 +146,7 @@ export default function PronunciationPage() {
               <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                 <div className="bg-blue-600 h-3 rounded-full" style={{ width: "10%" }}></div>
               </div>
-              <p className="text-sm text-gray-600">Current sentence</p>
             </div>
-
 
             <div className="bg-green-50 rounded-lg p-8 mb-8 relative">
               <div className="flex items-start justify-between">
@@ -125,13 +166,11 @@ export default function PronunciationPage() {
               </div>
             </div>
 
-
             <div className="text-center mb-8 bg-white p-6 rounded-lg border">
               <h3 className="text-3xl font-bold text-gray-900 mb-2 leading-relaxed">
                 {practiceSentence.text}
               </h3>
             </div>
-            
 
 
             <div className="space-y-6 mb-8 flex flex-col items-center">
@@ -150,17 +189,25 @@ export default function PronunciationPage() {
                   <FaMicrophone className="text-green-600 text-lg" />
                   <span className="font-medium text-gray-900">Step 2: Practice</span>
                 </div>
-                <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-                  <FaMicrophone className="text-sm" />
-                  <span>Start Recording</span>
+                <button 
+                  onClick={handleRecordButtonClick}
+
+                  className={`px-6 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 font-semibold
+                    ${recordingStatus === "idle" && "bg-gray-100 hover:bg-gray-200 text-gray-700"}
+                    ${recordingStatus === "recording" && "bg-red-500 hover:bg-red-600 text-white animate-pulse"}
+                    ${recordingStatus === "processing" && "bg-yellow-400 text-yellow-800 cursor-not-allowed"}
+                  `}
+                  disabled={recordingStatus === "processing"}
+                >
+                  {recordingStatus === "idle" && <><FaMicrophone className="text-sm" /><span>Start Recording</span></>}
+                  {recordingStatus === "recording" && <><FiSquare className="text-sm" /><span>Stop Recording</span></>}
+                  {recordingStatus === "processing" && <><FiRefreshCw className="text-sm animate-spin" /><span>Processing...</span></>}
                 </button>
               </div>
             </div>
-
-
+            
           </>
         ) : null}
-        
       </main>
     </div>
   )
