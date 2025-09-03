@@ -12,13 +12,27 @@ const navigationItems = [
   { label: "Pronunciation", href: "/pronunciation" },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  avatarImage?: string;
+}
+
+export default function Header({ avatarImage }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [storedAvatar, setStoredAvatar] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : "auto";
   }, [isMenuOpen]);
+
+  useEffect(() => {
+    const savedAvatar = localStorage.getItem("avatarImage");
+    if (savedAvatar) setStoredAvatar(savedAvatar);
+  }, []);
+
+  const defaultAvatar =
+    "https://via.placeholder.com/24x24/cccccc/000000?text=U";
+  const displayAvatar = avatarImage || storedAvatar || defaultAvatar;
 
   return (
     <>
@@ -37,7 +51,6 @@ export default function Header() {
               </Link>
             </div>
 
-          
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               {navigationItems.map((item) => (
@@ -55,10 +68,21 @@ export default function Header() {
               ))}
             </nav>
 
-            
+            {/* Desktop Profile Image */}
             <div className="hidden md:flex items-center">
-              {/*  desktop sign-in/log-out buttons  */}
-              
+              <Link
+                href="/profile"
+                className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${
+                  pathname === "/profile" ? "bg-gray-100" : ""
+                }`}
+                aria-label="Profile"
+              >
+                <img
+                  src={displayAvatar}
+                  alt="User Avatar"
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -70,7 +94,6 @@ export default function Header() {
                 <FiMenu size={28} className="text-gray-700" />
               </button>
             </div>
-            
           </div>
         </div>
       </header>
@@ -100,6 +123,19 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+            {/* Mobile Profile Image */}
+            <Link
+              href="/profile"
+              onClick={() => setIsMenuOpen(false)}
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              aria-label="Profile"
+            >
+              <img
+                src={displayAvatar}
+                alt="User Avatar"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            </Link>
             <Link href="/login">
               <button className="bg-white border border-transparent rounded-lg px-8 py-3 text-lg font-semibold text-black hover:bg-gray-200 transition-colors mt-4">
                 Log In
