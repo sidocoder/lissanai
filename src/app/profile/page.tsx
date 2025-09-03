@@ -29,6 +29,11 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+export interface HeaderProps {
+  avatarImage?: string;
+  name?: string;
+}
+
 const motivationalMessages = [
   "Keep it up, you're learning fast!",
   "Every step counts towards mastery!",
@@ -44,7 +49,7 @@ const getRandomMessage = () => {
 };
 
 export default function Profile() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [activeTab, setActiveTab] = useState<
     "overview" | "activity" | "awards"
   >("overview");
@@ -63,8 +68,14 @@ export default function Profile() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const backgroundInputRef = useRef<HTMLInputElement>(null);
 
-  // New state for cycling message
-  const [quote, setQuote] = useState("Keep it up, you're learning fast!"); // Fixed initial message
+  const [quote, setQuote] = useState("Keep it up, you're learning fast!");
+  // Cycle every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuote(getRandomMessage());
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,7 +85,6 @@ export default function Profile() {
         return;
       }
       try {
-        // Fetch user data
         const userResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`,
           {
@@ -137,6 +147,7 @@ export default function Profile() {
         throw new Error(errorData.message || "Failed to update user data");
       }
       setIsEditing(false);
+      update({ user: { name: user.name } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     }
@@ -259,25 +270,30 @@ export default function Profile() {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
         <div className="text-center">
-          {/* Mascot Image with Bouncing Animation */}
+          {/* Mascot Image with Floating + Idle Animations */}
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             className="mb-6"
           >
-            <img
+            <motion.img
               src="/images/mascot2.png"
               alt="Mascot"
               className="w-32 h-32 mx-auto"
+              whileHover={{
+                rotate: [0, -10, 10, 0],
+                transition: { duration: 0.6 },
+              }}
+              whileTap={{ scale: 0.9, rotate: 15 }}
             />
           </motion.div>
 
-          {/* Motivational Message with Fade Animation */}
+          {/* Motivational Message with Cycling */}
           <motion.h2
-            key="loading-message"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
+            key={quote}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
             className="text-2xl font-bold text-blue-900 mb-4"
           >
             {quote}
@@ -295,7 +311,7 @@ export default function Profile() {
                   delay: i * 0.2,
                   ease: "easeInOut",
                 }}
-                className="w-4 h-4 bg-white rounded-full"
+                className="w-4 h-4 bg-blue-400 rounded-full"
               />
             ))}
           </div>
@@ -316,7 +332,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header avatarImage={avatarImage ?? undefined} />
+      <Header avatarImage={avatarImage ?? undefined} name={user.name} />
 
       <section className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
@@ -325,7 +341,7 @@ export default function Profile() {
             style={{
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
-                : "url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5QkHAGP89CW8-TkQ-po-xygiSom_SCGe4WQ&s)",
+                : "linear-gradient(to right, #ff7e5f, #feb47b)", // Fallback gradient
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
@@ -460,7 +476,10 @@ export default function Profile() {
                   <div className="text-2xl font-bold text-gray-900">2</div>
                   <div className="text-sm text-gray-600">Level</div>
                 </div>
-
+                <div className="bg-gray-50 rounded-lg p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-900">47</div>
+                  <div className="text-sm text-gray-600">Sessions</div>
+                </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-gray-900">156</div>
                   <div className="text-sm text-gray-600">Hours Practiced</div>
@@ -631,6 +650,10 @@ export default function Profile() {
                 <span>Best Streak</span>
                 <span className="font-medium">12 days</span>
               </li>
+              <li className="flex items-center justify-between">
+                <span>Rank</span>
+                <span className="font-medium">#87</span>
+              </li>
             </ul>
           </section>
 
@@ -641,7 +664,10 @@ export default function Profile() {
                 <Mail className="h-4 w-4 text-gray-500" />
                 <span>{user.email}</span>
               </li>
-
+              <li className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-gray-500" />
+                <span>+1 (555) 123-4567</span>
+              </li>
               <li className="flex items-center gap-3">
                 <Globe className="h-4 w-4 text-gray-500" />
                 <span>www.lissanai.com</span>
