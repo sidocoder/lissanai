@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
@@ -24,12 +24,29 @@ import {
   Mic,
   Activity,
   LogOut,
+  Flame,
+  Loader,
 } from "lucide-react";
+import { motion } from "framer-motion";
+
+const motivationalMessages = [
+  "Keep it up, you're learning fast!",
+  "Every step counts towards mastery!",
+  "You're doing amazing—stay focused!",
+  "Progress is happening, one word at a time!",
+  "Believe in yourself, you're unstoppable!",
+];
+
+const getRandomMessage = () => {
+  return motivationalMessages[
+    Math.floor(Math.random() * motivationalMessages.length)
+  ];
+};
 
 export default function Profile() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "progress" | "activity" | "awards"
+    "overview" | "activity" | "awards"
   >("overview");
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
@@ -46,16 +63,19 @@ export default function Profile() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const backgroundInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user data from API on mount
+  // New state for cycling message
+  const [quote, setQuote] = useState("Keep it up, you're learning fast!"); // Fixed initial message
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       if (!session?.accessToken) {
+        setError("No session available. Please log in.");
         setLoading(false);
-        // Optionally, redirect to login or show a message if session is required
         return;
       }
       try {
-        const response = await fetch(
+        // Fetch user data
+        const userResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`,
           {
             headers: {
@@ -63,26 +83,36 @@ export default function Profile() {
             },
           }
         );
-        if (!response.ok) {
-          const errorData = await response.json();
+        if (!userResponse.ok) {
+          let errorData;
+          try {
+            errorData = await userResponse.json();
+          } catch {
+            errorData = { message: "Invalid response from server" };
+          }
           throw new Error(errorData.message || "Failed to fetch user data");
         }
-        const data = await response.json();
+        let userData;
+        try {
+          userData = await userResponse.json();
+        } catch {
+          throw new Error("Invalid JSON response for user data");
+        }
         setUser({
-          name: data.name || session.user?.name || "User",
-          email: data.email || session.user?.email || "",
-          bio: data.settings?.bio || "",
-          provider: data.provider || session.user?.provider || "N/A",
-          created_at: data.created_at || new Date().toISOString(),
+          name: userData.name || session.user?.name || "User",
+          email: userData.email || session.user?.email || "",
+          bio: userData.settings?.bio || "",
+          provider: userData.provider || session.user?.provider || "N/A",
+          created_at: userData.created_at || new Date().toISOString(),
         });
+        setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
         setLoading(false);
       }
     };
-    fetchUser();
-  }, [session]); // Dependency on session
+    fetchData();
+  }, [session]);
 
   // Update user data via API on save
   const handleSave = async () => {
@@ -121,14 +151,13 @@ export default function Profile() {
     if (savedBackground) {
       setBackgroundImage(savedBackground);
     } else {
-      // Set default background if none saved
       setBackgroundImage(
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5QkHAGP89CW8-TkQ-po-xygiSom_SCGe4WQ&s"
       );
     }
-  }, []); // Runs once on mount
+  }, []);
 
-  // Save images to localStorage whenever they change (using Base64)
+  // Save images to localStorage whenever they change
   useEffect(() => {
     if (avatarImage) {
       localStorage.setItem("avatarImage", avatarImage);
@@ -179,7 +208,7 @@ export default function Profile() {
       reader.onloadend = () => {
         setAvatarImage(reader.result as string);
       };
-      reader.readAsDataURL(file); // Read file as Base64
+      reader.readAsDataURL(file);
     }
   };
 
@@ -192,12 +221,16 @@ export default function Profile() {
       reader.onloadend = () => {
         setBackgroundImage(reader.result as string);
       };
-      reader.readAsDataURL(file); // Read file as Base64
+      reader.readAsDataURL(file);
     }
   };
+
   const handleLogout = async () => {
-    if (!session?.refreshToken) {
-      // Fallback if no refresh token
+    const refreshToken =
+      (session?.user as { refreshToken?: string })?.refreshToken ||
+      (session as { refreshToken?: string })?.refreshToken;
+
+    if (!refreshToken) {
       signOut({ callbackUrl: "/" });
       return;
     }
@@ -210,55 +243,98 @@ export default function Profile() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            refresh_token: session.refreshToken, // Adjust if stored differently in session
+            refresh_token: refreshToken,
           }),
         }
       );
       if (!response.ok) throw new Error("Failed to logout");
-      // On success, clear client session
       signOut({ callbackUrl: "/" });
     } catch (err) {
       console.error("Logout API error:", err);
-      // Fallback to client-side logout
       signOut({ callbackUrl: "/" });
     }
   };
 
   if (loading)
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gray-500">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent border-white"></div>
-          <p className="text-white font-bold text-lg">Loading...</p>
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div className="text-center">
+          {/* Mascot Image with Bouncing Animation */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="mb-6"
+          >
+            <img
+              src="/images/mascot2.png"
+              alt="Mascot"
+              className="w-32 h-32 mx-auto"
+            />
+          </motion.div>
+
+          {/* Motivational Message with Fade Animation */}
+          <motion.h2
+            key="loading-message"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            className="text-2xl font-bold text-blue-900 mb-4"
+          >
+            {quote}
+          </motion.h2>
+
+          {/* Pulsing Dots Progress Indicator */}
+          <div className="flex justify-center space-x-2">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                  ease: "easeInOut",
+                }}
+                className="w-4 h-4 bg-white rounded-full"
+              />
+            ))}
+          </div>
+
+          {/* Rotating Loading Icon */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="flex justify-center mt-4"
+          >
+            <Loader className="w-8 h-8 text-blue-600" />
+          </motion.div>
         </div>
       </div>
     );
-  if (error) return <div>Error: {error}</div>;
+  if (error)
+    return <div className="p-4 text-red-600 font-bold">Error: {error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header avatarImage={avatarImage} />
+      <Header avatarImage={avatarImage ?? undefined} />
 
-      {/* Cover + Profile header */}
       <section className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           <div
-            className="relative -mt-16 bg-white rounded-xl shadow-sm border p-6 overflow-hidden" // Added overflow-hidden for rounded corners
+            className="relative -mt-16 bg-white rounded-xl shadow-sm border p-6 overflow-hidden"
             style={{
-              // Apply background style directly to this div for "fitted to card"
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
                 : "url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5QkHAGP89CW8-TkQ-po-xygiSom_SCGe4WQ&s)",
-              backgroundSize: "cover", // Ensures image covers the area
+              backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
-              minHeight: "220px", // Adjust height for the background area within the card
-              paddingTop: "6rem", // Push content down below the background area
-              display: "flex", // Use flex to position content
+              minHeight: "220px",
+              paddingTop: "8rem",
+              display: "flex",
               flexDirection: "column",
             }}
           >
-            {/* Background change button - move it inside this div and adjust positioning */}
             <button
               onClick={() => backgroundInputRef.current?.click()}
               className="absolute top-4 right-4 bg-white rounded-full p-2 shadow border hover:bg-gray-50 z-10"
@@ -274,17 +350,12 @@ export default function Profile() {
               className="hidden"
             />
 
-            {/* Profile content starts here, pushed down by paddingTop */}
             <div className="relative z-20 mt-auto bg-white rounded-b-xl -mx-6 -mb-6 px-6 pt-2 pb-6">
-              {" "}
-              {/* Added mt-auto to push to bottom, and bg for content area */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="relative -mt-16">
-                    {" "}
-                    {/* Adjust negative margin to position avatar */}
                     <div
-                      className="w-24 h-24 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold bg-cover bg-center border-4 border-white shadow-md"
+                      className="w-32 h-32 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold bg-cover bg-center border-4 border-white shadow-md"
                       style={{
                         backgroundImage: avatarImage
                           ? `url(${avatarImage})`
@@ -312,8 +383,6 @@ export default function Profile() {
                   <div>
                     {isEditing ? (
                       <div className="space-y-2 mt-2">
-                        {" "}
-                        {/* Added mt-2 for spacing with avatar */}
                         <input
                           type="text"
                           value={user.name}
@@ -335,8 +404,6 @@ export default function Profile() {
                       </div>
                     ) : (
                       <div className="mt-2">
-                        {" "}
-                        {/* Added mt-2 for spacing with avatar */}
                         <h1 className="text-2xl font-bold text-gray-900">
                           {user.name}
                         </h1>
@@ -360,7 +427,7 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsEditing(!isEditing)}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white inline-flex items-center gap-2 hover:from-green-600 hover:to-blue-600"
+                    className="px-2 py-0.5 rounded-lg bg-[#337fa1] text-white inline-flex items-center gap-2 hover:bg-gray-400"
                   >
                     <Edit3 className="h-4 w-4" />{" "}
                     {isEditing ? "Cancel Edit" : "Edit Profile"}
@@ -368,20 +435,19 @@ export default function Profile() {
                   {isEditing && (
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 rounded-lg bg-green-600 text-white inline-flex items-center gap-2 hover:bg-green-700"
+                      className="px-4 py-0.5 rounded-lg bg-[#337fa1] text-white inline-flex items-center gap-2 hover:bg-[#3e5b6b]"
                     >
                       Save Changes
                     </button>
                   )}
                 </div>
               </div>
-              {/* Editable Bio */}
               <div className="mt-4">
                 {isEditing ? (
                   <textarea
                     value={user.bio}
                     onChange={(e) => setUser({ ...user, bio: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black"
                     rows={3}
                     placeholder="Bio"
                   />
@@ -389,51 +455,45 @@ export default function Profile() {
                   <p className="text-gray-700">{user.bio}</p>
                 )}
               </div>
-              {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-gray-900">47</div>
-                  <div className="text-sm text-gray-600">Sessions</div>
+                  <div className="text-2xl font-bold text-gray-900">2</div>
+                  <div className="text-sm text-gray-600">Level</div>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-gray-900">28</div>
-                  <div className="text-sm text-gray-600">Achievements</div>
-                </div>
+
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-gray-900">156</div>
                   <div className="text-sm text-gray-600">Hours Practiced</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-gray-900">7</div>
-                  <div className="text-sm text-gray-600">Day Streak</div>
+                  <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+                    <Flame className="h-4 w-4 fill-orange-400 border-amber-700 text-orange-500" />{" "}
+                    Day Streak
+                  </div>
                 </div>
               </div>
-              {/* Tabs */}
               <div className="mt-6 border-b flex items-center gap-6 text-sm">
-                {(["overview", "progress", "activity", "awards"] as const).map(
-                  (t) => (
-                    <button
-                      key={t}
-                      onClick={() => setActiveTab(t)}
-                      className={`py-3 -mb-px border-b-2 ${
-                        activeTab === t
-                          ? "border-green-600 text-green-700 font-medium"
-                          : "border-transparent text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      {t[0].toUpperCase() + t.slice(1)}
-                    </button>
-                  )
-                )}
+                {(["overview", "activity", "awards"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`py-3 -mb-px border-b-2 ${
+                      activeTab === t
+                        ? "border-green-600 text-green-700 font-medium"
+                        : "border-transparent text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    {t[0].toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Rest of the page remains the same */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid lg:grid-cols-3 gap-6">
-        {/* Main column */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-10 grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {activeTab === "overview" && (
             <div className="space-y-6">
@@ -499,34 +559,6 @@ export default function Profile() {
             </div>
           )}
 
-          {activeTab === "progress" && (
-            <section className="bg-white rounded-xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Learning Progress
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white">
-                  <div className="flex items-center justify-between">
-                    <span>Pronunciation Score</span>
-                    <span className="font-bold">94%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/30 rounded-full mt-2">
-                    <div className="h-2 bg-white rounded-full w-[94%]"></div>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  <div className="flex items-center justify-between">
-                    <span>Grammar Mastery</span>
-                    <span className="font-bold">88%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/30 rounded-full mt-2">
-                    <div className="h-2 bg-white rounded-full w-[88%]"></div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
           {activeTab === "activity" && (
             <section className="bg-white rounded-xl shadow-sm border p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -583,8 +615,6 @@ export default function Profile() {
             </section>
           )}
         </div>
-
-        {/* Sidebar */}
         <aside className="space-y-6">
           <section className="bg-white rounded-xl shadow-sm border p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
@@ -601,10 +631,6 @@ export default function Profile() {
                 <span>Best Streak</span>
                 <span className="font-medium">12 days</span>
               </li>
-              <li className="flex items-center justify-between">
-                <span>Rank</span>
-                <span className="font-medium">#87</span>
-              </li>
             </ul>
           </section>
 
@@ -615,10 +641,7 @@ export default function Profile() {
                 <Mail className="h-4 w-4 text-gray-500" />
                 <span>{user.email}</span>
               </li>
-              <li className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <span>+1 (555) 123-4567</span>
-              </li>
+
               <li className="flex items-center gap-3">
                 <Globe className="h-4 w-4 text-gray-500" />
                 <span>www.lissanai.com</span>
@@ -634,14 +657,6 @@ export default function Profile() {
               >
                 <Activity className="h-4 w-4" /> Dashboard
               </Link>
-
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 rounded-lg border text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" /> Logout
-              </button>
             </div>
           </section>
         </aside>
