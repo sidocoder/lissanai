@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const token = await getToken({ req, secret });
-  console.log('Token found:', token ? `User: ${token.email}` : 'No token');
+  console.log('Token found:', token ? `User: ${token.accessToken}` : 'No token');
 
   const protectedRoutes = ['/learn', '/grammar','interview','writing'];
   const authRoutes = ['/login', '/signup', '/forgot-password', '/reset-password'];
