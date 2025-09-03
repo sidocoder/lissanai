@@ -72,7 +72,7 @@ export default function Dashboard() {
             </p>
             <Link href="/learn">
               <button className="w-full bg-white text-gray-700 font-semibold px-5 py-2 rounded-full flex items-center gap-1 shadow hover:bg-gray-100 text-base sm:text-lg">
-                <span>▶</span>
+                <span>▶ </span>
                 Continue Learning
                 <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs ml-2">
                   1 day streak 🔥
@@ -81,14 +81,13 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="flex flex-col items-center w-full sm:w-auto">
-            <img
-              src="/images/mascot.png"
-              alt="AI Coach"
-              className="w-24 h-32 sm:w-30 sm:h-40 rounded-full bg-white p-2 shadow-lg"
-            />
-            <span className="bg-white text-blue-800 px-3 py-1 rounded-full mt-2 text-xs font-semibold shadow">
-              Ready to help!
-            </span>
+           <div className="relative h-64 w-64 md:h-80 md:w-80 mx-auto flex items-center justify-center">
+                <img
+                    src="/videos/dashboard.gif" // Path to your GIF file
+                    alt="LissanAI Mascot Animation" // Accessible alt text for the image
+                    className="absolute inset-0 w-full h-full object-contain" // Keep consistent styling
+                />
+            </div>
           </div>
         </div>
       </section>
@@ -135,7 +134,7 @@ export default function Dashboard() {
               </p>
             </div>
             <Link href="/interview">
-              <button className="w-full bg-gradient-to-r from-[#337EA2] to-[#0655a5] text-white font-semibold px-5 py-2 rounded-full gap-2 shadow hover:opacity-90 text-base">
+              <button className="w-full bg-gradient-to-r from-[#337fa1] to-[#0655a5] text-white font-semibold px-5 py-2 rounded-full gap-2 shadow hover:opacity-90 text-base">
                 Start Practice →
               </button>
             </Link>
