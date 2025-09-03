@@ -341,7 +341,7 @@ export default function Profile() {
             style={{
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
-                : "linear-gradient(to right, #ff7e5f, #feb47b)", // Fallback gradient
+                : "linear-gradient(to right, #ff7e5f, #feb47b)",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
