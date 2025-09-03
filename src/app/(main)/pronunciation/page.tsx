@@ -4,12 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import Header from "@/components/Header"
 import Image from "next/image"
 import { FaHeadphones, FaMicrophone, FaPlay } from "react-icons/fa"
-import { FiRefreshCw, FiSquare, FiCircle } from "react-icons/fi"; 
+import { FiRefreshCw, FiSquare, FiCheckCircle } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
 
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-
 
 interface PracticeSentence {
   id: string;
@@ -30,16 +29,14 @@ export default function PronunciationPage() {
   const [practiceSentence, setPracticeSentence] = useState<PracticeSentence | null>(null);
   const [feedback, setFeedback] = useState<AssessmentFeedback | null>(null);
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>("idle");
-  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]); 
-  
+  const audioChunksRef = useRef<Blob[]>([]);
 
+  
   const fetchSentence = async () => {
     setIsLoading(true);
     setError(null);
     setFeedback(null);
-    setRecordedAudio(null);
     setRecordingStatus("idle");
     try {
       const response = await fetch('/api/pronunciation/sentence');
@@ -58,9 +55,43 @@ export default function PronunciationPage() {
     fetchSentence();
   }, []);
 
+  
+  const handleAssessRecording = async (audioBlob: Blob) => {
+    if (!practiceSentence) {
+      toast.error("No practice sentence available.");
+      setRecordingStatus("idle");
+      return;
+    }
 
+    const formData = new FormData();
+    formData.append('audio_data', audioBlob, 'recording.webm');
+    formData.append('target_text', practiceSentence.text);
+
+    try {
+      const response = await fetch('/api/pronunciation/assess', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Assessment failed.");
+      }
+
+      setFeedback(result);
+      setRecordingStatus("completed");
+      toast.success("Assessment complete!");
+
+    } catch (err: any) {
+      console.error("Assessment error:", err);
+      toast.error(err.message);
+      setRecordingStatus("idle"); 
+      
+    }
+  };
+  
   const handleStartRecording = async () => {
-    setRecordedAudio(null);
     setFeedback(null);
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
@@ -74,8 +105,7 @@ export default function PronunciationPage() {
 
         mediaRecorderRef.current.onstop = () => {
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          setRecordedAudio(audioBlob);
-
+          handleAssessRecording(audioBlob);
         };
 
         mediaRecorderRef.current.start();
@@ -84,7 +114,7 @@ export default function PronunciationPage() {
 
       } catch (err) {
         console.error("Error accessing microphone:", err);
-        toast.error("Could not access microphone. Please allow permission in your browser.");
+        toast.error("Could not access microphone. Please allow permission.");
       }
     } else {
       toast.error("Audio recording is not supported by your browser.");
@@ -94,15 +124,11 @@ export default function PronunciationPage() {
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && recordingStatus === "recording") {
       mediaRecorderRef.current.stop();
-      
-      
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setRecordingStatus("processing"); 
-      
-      toast("Recording stopped. Processing...", { icon: '🤖' });
+      setRecordingStatus("processing");
+      toast("Recording stopped. Analyzing...", { icon: '🤖' });
     }
   };
-
 
   const handleRecordButtonClick = () => {
     if (recordingStatus === "recording") {
@@ -111,7 +137,6 @@ export default function PronunciationPage() {
       handleStartRecording();
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -138,6 +163,7 @@ export default function PronunciationPage() {
           </div>
         ) : practiceSentence ? (
           <>
+          
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold text-gray-900">Practice Progress</h1>
@@ -146,6 +172,7 @@ export default function PronunciationPage() {
               <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                 <div className="bg-blue-600 h-3 rounded-full" style={{ width: "10%" }}></div>
               </div>
+              <p className="text-sm text-gray-600">Current sentence:</p>
             </div>
 
             <div className="bg-green-50 rounded-lg p-8 mb-8 relative">
@@ -155,23 +182,29 @@ export default function PronunciationPage() {
                     <FaHeadphones className="text-gray-600" />
                     <h2 className="text-xl font-semibold text-gray-900">Practice This Sentence</h2>
                   </div>
-                  <p className="text-sm text-gray-600">Focus on the highlighted words • beginner</p>
+                  <p className="text-sm text-gray-600">Beginner • Vowel Sounds</p>
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="w-20 h-20 rounded-full overflow-hidden bg-white shadow-sm">
-                    <Image src={"/images/mascot.png"} alt="LissanAI Mascot" width={80} height={80} className="w-full h-full object-contain" />
+                    <Image
+                      src={"/images/mascot.png"}
+                      alt="LissanAI Mascot"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <p className="text-xs text-gray-600">🎧 Listen carefully</p>
                 </div>
               </div>
             </div>
+            
 
             <div className="text-center mb-8 bg-white p-6 rounded-lg border">
               <h3 className="text-3xl font-bold text-gray-900 mb-2 leading-relaxed">
                 {practiceSentence.text}
               </h3>
             </div>
-
 
             <div className="space-y-6 mb-8 flex flex-col items-center">
               <div className="flex flex-col items-center space-y-2">
@@ -184,6 +217,7 @@ export default function PronunciationPage() {
                   <span>Play Sentence</span>
                 </button>
               </div>
+
               <div className="flex flex-col items-center space-y-2">
                 <div className="flex items-center space-x-3">
                   <FaMicrophone className="text-green-600 text-lg" />
@@ -191,21 +225,61 @@ export default function PronunciationPage() {
                 </div>
                 <button 
                   onClick={handleRecordButtonClick}
-
                   className={`px-6 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 font-semibold
-                    ${recordingStatus === "idle" && "bg-gray-100 hover:bg-gray-200 text-gray-700"}
+                    ${(recordingStatus === "idle" || recordingStatus === "completed") && "bg-gray-100 hover:bg-gray-200 text-gray-700"}
                     ${recordingStatus === "recording" && "bg-red-500 hover:bg-red-600 text-white animate-pulse"}
                     ${recordingStatus === "processing" && "bg-yellow-400 text-yellow-800 cursor-not-allowed"}
                   `}
                   disabled={recordingStatus === "processing"}
                 >
-                  {recordingStatus === "idle" && <><FaMicrophone className="text-sm" /><span>Start Recording</span></>}
+                  {(recordingStatus === "idle" || recordingStatus === "completed") && <><FaMicrophone className="text-sm" /><span>Start Recording</span></>}
                   {recordingStatus === "recording" && <><FiSquare className="text-sm" /><span>Stop Recording</span></>}
-                  {recordingStatus === "processing" && <><FiRefreshCw className="text-sm animate-spin" /><span>Processing...</span></>}
+                  {recordingStatus === "processing" && <><FiRefreshCw className="text-sm animate-spin" /><span>Analyzing...</span></>}
                 </button>
               </div>
             </div>
-            
+
+            {feedback && (
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Your Feedback</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-center">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-blue-800 font-semibold">Overall Accuracy</p>
+                    <p className="text-4xl font-bold text-blue-600 mt-1">{feedback.overall_accuracy_score}%</p>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg col-span-1 md:col-span-2">
+                    <p className="text-sm text-red-800 font-semibold">Words to Practice</p>
+                    {feedback.mispronouncedwords.length > 0 ? (
+                      <div className="flex flex-wrap justify-center gap-2 mt-2">
+                        {feedback.mispronouncedwords.map((word, index) => (
+                          <span key={index} className="bg-red-100 text-red-700 font-mono px-2 py-1 rounded-md text-lg">
+                            {word}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2 text-green-600 mt-2">
+                        <FiCheckCircle />
+                        <span>Great job! No mistakes found.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">Summary</h3>
+                  <p className="text-gray-600">{feedback.full_feedback_summary}</p>
+                </div>
+              </div>
+            )}
+          
+               <div className="text-center">
+              <button 
+                onClick={fetchSentence}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+              >
+                Try Another Sentence
+              </button>
+            </div>
           </>
         ) : null}
       </main>
