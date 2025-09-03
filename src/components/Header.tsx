@@ -3,8 +3,8 @@ import Link from "next/link";
 import { FiMenu, FiX } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react"; // Add for logout
-import { ChevronDown, LogOut } from "lucide-react"; // Add icons
+import { useSession, signOut } from "next-auth/react";
+import { ChevronDown, LogOut } from "lucide-react";
 
 const navigationItems = [
   { label: "Mock Interviews", href: "/interview" },
@@ -20,8 +20,9 @@ interface HeaderProps {
 
 export default function Header({ avatarImage }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false); // For profile dropdown
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [storedAvatar, setStoredAvatar] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -33,6 +34,29 @@ export default function Header({ avatarImage }: HeaderProps) {
     const savedAvatar = localStorage.getItem("avatarImage");
     if (savedAvatar) setStoredAvatar(savedAvatar);
   }, []);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!session?.accessToken) return;
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setUserData(data);
+        }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
+    };
+    fetchUser();
+  }, [session]);
 
   const defaultAvatar =
     "https://via.placeholder.com/24x24/cccccc/000000?text=U";
@@ -84,10 +108,11 @@ export default function Header({ avatarImage }: HeaderProps) {
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                 <div className="px-4 py-2 border-b border-gray-200">
                   <p className="text-sm font-medium text-gray-900">
-                    {session?.user?.name || "User"}
+                    {userData?.name || session?.user?.name || "User"}{" "}
+                    {/* Use fetched name */}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {session?.user?.email || ""}
+                    {userData?.email || session?.user?.email || ""}
                   </p>
                 </div>
                 <Link
