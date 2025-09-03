@@ -28,6 +28,30 @@ import {
   Loader,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import CalendarHeatmap from "react-calendar-heatmap";
+import "react-calendar-heatmap/dist/styles.css";
+
+declare module "react-calendar-heatmap" {
+  import * as React from "react";
+
+  export interface CalendarHeatmapValue {
+    date: string;
+    count: number;
+  }
+
+  export interface CalendarHeatmapProps {
+    startDate: Date | string;
+    endDate: Date | string;
+    values: CalendarHeatmapValue[];
+    classForValue?: (value: CalendarHeatmapValue | undefined) => string;
+    tooltipDataAttrs?: (value: CalendarHeatmapValue) => Record<string, string>;
+    showWeekdayLabels?: boolean;
+    // Add more props as needed
+  }
+
+  const CalendarHeatmap: React.FC<CalendarHeatmapProps>;
+  export default CalendarHeatmap;
+}
 
 export interface HeaderProps {
   avatarImage?: string;
@@ -69,7 +93,16 @@ export default function Profile() {
   const backgroundInputRef = useRef<HTMLInputElement>(null);
 
   const [quote, setQuote] = useState("Keep it up, you're learning fast!");
-  // Cycle every 4 seconds
+  const [streakInfo, setStreakInfo] = useState({
+    current_streak: 0,
+    longest_streak: 0,
+    can_freeze: true,
+    freeze_count: 0,
+    max_freezes: 2,
+    streak_frozen: false,
+  });
+  const [calendarData, setCalendarData] = useState([]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setQuote(getRandomMessage());
@@ -124,7 +157,55 @@ export default function Profile() {
     fetchData();
   }, [session]);
 
-  // Update user data via API on save
+  useEffect(() => {
+    const fetchStreakData = async () => {
+      try {
+        // Fetch streak info
+        const infoResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/streak/info`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+        if (infoResponse.ok) {
+          const infoData = await infoResponse.json();
+          setStreakInfo(infoData);
+        }
+
+        // Fetch calendar data
+        const calendarResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/streak/calendar`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+        if (calendarResponse.ok) {
+          const calendarData = await calendarResponse.json();
+          // Transform weeks data to { date, count } format for heatmap
+          const transformedData = [];
+          calendarData.weeks.forEach((week) => {
+            week.days.forEach((day) => {
+              if (day.has_activity) {
+                transformedData.push({
+                  date: day.date,
+                  count: day.activity_count,
+                });
+              }
+            });
+          });
+          setCalendarData(transformedData);
+        }
+      } catch (err) {
+        console.error("Error fetching streak data:", err);
+      }
+    };
+    if (session?.accessToken) fetchStreakData();
+  }, [session]);
+
   const handleSave = async () => {
     if (!session?.accessToken) return;
     try {
@@ -266,6 +347,48 @@ export default function Profile() {
     }
   };
 
+  const handleFreezeStreak = async () => {
+    if (!streakInfo.can_freeze) {
+      alert("Freeze limit reached for this month.");
+      return;
+    }
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/streak/freeze`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify({
+            reason: "User requested freeze", // Customize as needed
+          }),
+        }
+      );
+      if (response.ok) {
+        alert("Streak frozen successfully!");
+        // Refetch streak info to update state
+        const infoResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/streak/info`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+        if (infoResponse.ok) {
+          const infoData = await infoResponse.json();
+          setStreakInfo(infoData);
+        }
+      } else {
+        alert("Failed to freeze streak.");
+      }
+    } catch (err) {
+      console.error("Error freezing streak:", err);
+    }
+  };
+
   if (loading)
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
@@ -315,15 +438,6 @@ export default function Profile() {
               />
             ))}
           </div>
-
-          {/* Rotating Loading Icon */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="flex justify-center mt-4"
-          >
-            <Loader className="w-8 h-8 text-blue-600" />
-          </motion.div>
         </div>
       </div>
     );
@@ -425,7 +539,7 @@ export default function Profile() {
                         </h1>
                         <div className="text-gray-600 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mt-1">
                           <span className="inline-flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" /> New York, USA
+                            <MapPin className="h-4 w-4 mr-1" /> Abeba Abeba, AA
                           </span>
                           <span className="inline-flex items-center">
                             <Calendar className="h-4 w-4 mr-1" /> Joined{" "}
@@ -485,9 +599,15 @@ export default function Profile() {
                   <div className="text-sm text-gray-600">Hours Practiced</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-gray-900">7</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {streakInfo.current_streak}
+                  </div>
                   <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
-                    <Flame className="h-4 w-4 fill-orange-400 border-amber-700 text-orange-500" />{" "}
+                    <Flame
+                      className={`h-4 w-4 ${
+                        streakInfo.current_streak > 0 ? "fill-orange-400" : ""
+                      } border-amber-700 text-orange-500`}
+                    />{" "}
                     Day Streak
                   </div>
                 </div>
@@ -516,6 +636,50 @@ export default function Profile() {
         <div className="lg:col-span-2 space-y-6">
           {activeTab === "overview" && (
             <div className="space-y-6">
+              <section className="bg-white rounded-xl shadow-sm border p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Learning Streak
+                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Current Streak</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {streakInfo.current_streak} days
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleFreezeStreak}
+                    disabled={!streakInfo.can_freeze}
+                    className={`px-4 py-2 rounded-lg ${
+                      streakInfo.can_freeze
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                    }`}
+                  >
+                    Freeze Streak{" "}
+                    {streakInfo.can_freeze
+                      ? ""
+                      : `(Used ${streakInfo.freeze_count}/${streakInfo.max_freezes})`}
+                  </button>
+                </div>
+                <CalendarHeatmap
+                  startDate={new Date(new Date().getFullYear(), 0, 1)}
+                  endDate={new Date()}
+                  values={calendarData}
+                  classForValue={(
+                    value: { date: string; count: number } | undefined
+                  ) => {
+                    if (!value) return "color-empty";
+                    return `color-scale-${Math.min(value.count, 4)}`;
+                  }}
+                  tooltipDataAttrs={(value: {
+                    date: string;
+                    count: number;
+                  }) => ({
+                    "data-tip": `${value.date}: ${value.count} activities`,
+                  })}
+                />
+              </section>
               <section className="bg-white rounded-xl shadow-sm border p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Achievements & Badges
@@ -664,10 +828,7 @@ export default function Profile() {
                 <Mail className="h-4 w-4 text-gray-500" />
                 <span>{user.email}</span>
               </li>
-              <li className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <span>+1 (555) 123-4567</span>
-              </li>
+
               <li className="flex items-center gap-3">
                 <Globe className="h-4 w-4 text-gray-500" />
                 <span>www.lissanai.com</span>
