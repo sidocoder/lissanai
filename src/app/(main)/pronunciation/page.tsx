@@ -210,12 +210,23 @@ export default function PronunciationPage() {
               <div className="flex flex-col items-center space-y-2">
                 <div className="flex items-center space-x-3">
                   <FaHeadphones className="text-blue-600 text-lg" />
-                  <span className="font-medium text-gray-900">Step 1: Listen</span>
+                  <span className="font-medium text-gray-900">Step 1: Read the sentence carefully</span>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+
+
+   <div className="text-center">
+              <button 
+                onClick={fetchSentence}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
+              >
+                Try Another Sentence
+              </button>
+            </div>
+
+                {/* <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors">
                   <FaPlay className="text-sm" />
                   <span>Play Sentence</span>
-                </button>
+                </button> */}
               </div>
 
               <div className="flex flex-col items-center space-y-2">
@@ -272,14 +283,14 @@ export default function PronunciationPage() {
               </div>
             )}
           
-               <div className="text-center">
+               {/* <div className="text-center">
               <button 
                 onClick={fetchSentence}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
               >
                 Try Another Sentence
               </button>
-            </div>
+            </div> */}
           </>
         ) : null}
       </main>
