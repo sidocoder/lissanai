@@ -7,7 +7,6 @@ import { FaHeadphones, FaMicrophone, FaPlay } from "react-icons/fa"
 import { FiRefreshCw, FiSquare, FiCheckCircle } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
 
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 interface PracticeSentence {
@@ -21,6 +20,23 @@ interface AssessmentFeedback {
 }
 type RecordingStatus = "idle" | "recording" | "processing" | "completed";
 
+const HighlightedSentence = ({ sentence, mispronouncedWords }: { sentence: string, mispronouncedWords: string[] }) => {
+  const mispronouncedSet = new Set(mispronouncedWords.map(word => word.toLowerCase().replace(/[.,!?]/g, '')));
+  const words = sentence.split(/(\s+)/);
+  return (
+    <p className="text-3xl font-bold leading-relaxed">
+      {words.map((word, index) => {
+        const normalizedWord = word.toLowerCase().replace(/[.,!?]/g, '');
+        const isMispronounced = mispronouncedSet.has(normalizedWord);
+        return (
+          <span key={index} className={isMispronounced ? "text-red-500" : "text-gray-900"}>
+            {word}
+          </span>
+        );
+      })}
+    </p>
+  );
+};
 
 export default function PronunciationPage() {
     
@@ -31,9 +47,13 @@ export default function PronunciationPage() {
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>("idle");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  
   const fetchSentence = async () => {
+    
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+
     setIsLoading(true);
     setError(null);
     setFeedback(null);
@@ -53,9 +73,13 @@ export default function PronunciationPage() {
 
   useEffect(() => {
     fetchSentence();
+    
+    
+    return () => {
+      window.speechSynthesis.cancel();
+    };
   }, []);
 
-  
   const handleAssessRecording = async (audioBlob: Blob) => {
     if (!practiceSentence) {
       toast.error("No practice sentence available.");
@@ -87,11 +111,14 @@ export default function PronunciationPage() {
       console.error("Assessment error:", err);
       toast.error(err.message);
       setRecordingStatus("idle"); 
-      
     }
   };
   
   const handleStartRecording = async () => {
+    
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+
     setFeedback(null);
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
@@ -138,6 +165,40 @@ export default function PronunciationPage() {
     }
   };
 
+  const handlePlaySentence = () => {
+    if (!practiceSentence?.text || typeof window === 'undefined') return;
+
+    window.speechSynthesis.cancel();
+
+    if (isSpeaking) {
+      setIsSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(practiceSentence.text);
+    
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoice = voices.find(voice => voice.lang.startsWith('en-US')) || voices.find(voice => voice.lang.startsWith('en-'));
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+    
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+    
+    utterance.onerror = () => {
+        setIsSpeaking(false);
+        toast.error("Sorry, could not play the audio.");
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-center" />
@@ -163,7 +224,6 @@ export default function PronunciationPage() {
           </div>
         ) : practiceSentence ? (
           <>
-          
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold text-gray-900">Practice Progress</h1>
@@ -199,7 +259,6 @@ export default function PronunciationPage() {
               </div>
             </div>
             
-
             <div className="text-center mb-8 bg-white p-6 rounded-lg border">
               <h3 className="text-3xl font-bold text-gray-900 mb-2 leading-relaxed">
                 {practiceSentence.text}
@@ -210,23 +269,18 @@ export default function PronunciationPage() {
               <div className="flex flex-col items-center space-y-2">
                 <div className="flex items-center space-x-3">
                   <FaHeadphones className="text-blue-600 text-lg" />
-                  <span className="font-medium text-gray-900">Step 1: Read the sentence carefully</span>
+                  <span className="font-medium text-gray-900">Step 1: Listen</span>
                 </div>
-
-
-   <div className="text-center">
-              <button 
-                onClick={fetchSentence}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
-              >
-                Try Another Sentence
-              </button>
-            </div>
-
-                {/* <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+              
+                <button 
+                  onClick={handlePlaySentence}
+                  disabled={isSpeaking}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+                >
                   <FaPlay className="text-sm" />
-                  <span>Play Sentence</span>
-                </button> */}
+                  <span>{isSpeaking ? 'Playing...' : 'Play Sentence'}</span>
+                </button>
+                
               </div>
 
               <div className="flex flex-col items-center space-y-2">
@@ -253,6 +307,12 @@ export default function PronunciationPage() {
             {feedback && (
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Your Feedback</h2>
+                <div className="text-center mb-6 bg-gray-50 p-4 rounded-lg">
+                  <HighlightedSentence 
+                    sentence={practiceSentence.text} 
+                    mispronouncedWords={feedback.mispronouncedwords} 
+                  />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 text-center">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <p className="text-sm text-blue-800 font-semibold">Overall Accuracy</p>
@@ -283,14 +343,14 @@ export default function PronunciationPage() {
               </div>
             )}
           
-               {/* <div className="text-center">
+            <div className="text-center">
               <button 
                 onClick={fetchSentence}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
               >
                 Try Another Sentence
               </button>
-            </div> */}
+            </div>
           </>
         ) : null}
       </main>
