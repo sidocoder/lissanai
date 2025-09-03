@@ -61,6 +61,8 @@ export default function LandingPage() {
     { icon: <FiMail size={28} />, title: 'Email Drafting', subtitle: 'Professional communication', items: ['Amharic to English translation', 'Professional templates', 'Tone adjustment'], gradient: 'from-[#3f72af] to-[#a0e7e5]' },
     { icon: <FiMic size={28} />, title: 'Pronunciation Coach', subtitle: 'Speak with confidence', items: ['Speech-to-text analysis', 'Phonetic breakdowns', 'Progress tracking'], gradient: 'from-[#0057b7] to-[#3f72af]' },
     { icon: <FiEdit3 size={28} />, title: 'Grammar & Clarity', subtitle: 'Write like a pro', items: ['Real-time corrections', 'Style improvements', 'Clarity scoring'], gradient: 'from-[#0057b7] to-[#a0e7e5]' },
+    { icon: <FiEdit3 size={28} />, title: 'Free speaking practice', subtitle: 'practice free', items: ['Real-time feedback', 'Real-time corrections'], gradient: 'from-[#0057b7] to-[#a0e7e5]' },
+    { icon: <FiEdit3 size={28} />, title: 'Learning lessons', subtitle: 'Learn English basics', items: ['Grammar', 'Vocabulary', 'Tenses'], gradient: 'from-[#0057b7] to-[#a0e7e5]' },
   ];
 
   const steps: Step[] = [
