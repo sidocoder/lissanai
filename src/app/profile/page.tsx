@@ -144,11 +144,10 @@ export default function Profile() {
           provider: userData.provider || session.user?.provider || "N/A",
           created_at: userData.created_at || new Date().toISOString(),
         });
-        // Set streak info from /users/me response
         setStreakInfo({
           current_streak: userData.current_streak || 0,
           longest_streak: userData.longest_streak || 0,
-          can_freeze: (userData.freeze_count || 0) < 2, // Assuming max_freezes is 2
+          can_freeze: (userData.freeze_count || 0) < 2,
           freeze_count: userData.freeze_count || 0,
           max_freezes: 2,
           streak_frozen: userData.streak_frozen || false,
@@ -895,7 +894,7 @@ export default function Profile() {
                           value && typeof value.count === "number"
                             ? `${value.date}: ${value.count} activities`
                             : "",
-                      };
+                      } as Record<string, string>;
                     }}
                   />
                 </section>
