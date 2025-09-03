@@ -182,6 +182,13 @@ export default function LandingPage() {
                     </div>
                     <div className="relative h-64 w-64 md:h-80 md:w-80 mx-auto">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#3f72af] to-[#a0e7e5] rounded-full shadow-2xl animate-pulse"></div>
+                        <div className="relative h-64 w-64 md:h-80 md:w-80 mx-auto flex items-center justify-center">
+                        <img
+                            src="/videos/welcomingmascot.gif" // Path to your GIF file
+                            alt="LissanAI Mascot Animation" // Accessible alt text for the image
+                            className="absolute inset-0 w-full h-full object-contain" // Keep consistent styling
+                        />
+                    </div>
                     </div>
                 </div>
             </div>
