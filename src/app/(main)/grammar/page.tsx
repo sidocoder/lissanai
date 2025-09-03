@@ -472,14 +472,14 @@ export default function GrammarCoachPage() {
               <CardContent className="space-y-4">
                 <div className="text-center">
                   <div className="flex flex-col items-center ml-4">
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
-                      <Image
-                        src="/images/mascot.png"
-                        alt="Grammar Coach Mascot"
-                        width={128}
-                        height={128}
-                        className="w-32 h-32 rounded-[9999px] object-contain"
-                      />
+                    <div className="w-80 h-80 bg-white rounded-full flex items-center justify-center shadow-lg">
+                      <div className="relative h-64 w-64 md:h-80 md:w-80 mx-auto flex items-center justify-center">
+                        <img
+                            src="/videos/sleepingmascot.gif" // Path to your GIF file
+                            alt="LissanAI Mascot Animation" // Accessible alt text for the image
+                            className="absolute inset-0 w-full h-full object-contain" // Keep consistent styling
+                        />
+                    </div>
                     </div>
                     <div className="flex items-center text-xs text-black bg-[#D9E0ED] rounded-full mt-2 px-3 py-1 font-medium shadow">
                       🗣️ Write your text
