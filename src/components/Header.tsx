@@ -22,7 +22,8 @@ export default function Header({ avatarImage }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [storedAvatar, setStoredAvatar] = useState<string | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  type UserData = Record<string, unknown> | null;
+  const [userData, setUserData] = useState<UserData>(null);
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -92,69 +93,58 @@ export default function Header({ avatarImage }: HeaderProps) {
             ))}
           </nav>
 
-            {/* Desktop Profile Image */}
-            <div className="hidden md:flex items-center">
-              <Link
-                href="/profile"
-                className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${
-                  pathname === "/profile" ? "bg-gray-100" : ""
-                }`}
-                aria-label="Profile"
-              >
-                <img
-                  src={displayAvatar}
-                  alt="User Avatar"
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-              </Link>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center">
-              <button
-                onClick={() => setIsMenuOpen(true)}
-                aria-label="Open menu"
-              >
-                <FiMenu size={28} className="text-gray-700" />
-              </button>
-            </div>
+          {/* Desktop Profile Image */}
+          <div className="hidden md:flex items-center">
+            <Link
+              href="/profile"
+              className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${
+                pathname === "/profile" ? "bg-gray-100" : ""
+              }`}
+              aria-label="Profile"
+            >
+              <img
+                src={displayAvatar}
+                alt="User Avatar"
+                className="w-6 h-6 rounded-full object-cover"
+              />
+            </Link>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-700 hover:text-blue-600"
-          >
-            {isMenuOpen ? (
-              <FiX className="h-6 w-6" />
-            ) : (
-              <FiMenu className="h-6 w-6" />
-            )}
-          </button>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
-            <nav className="flex flex-col space-y-2">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`text-sm font-medium ${
-                    pathname === item.href
-                      ? "text-blue-600"
-                      : "text-gray-700 hover:text-blue-600"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        )}
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden p-2 rounded-md text-gray-700 hover:text-blue-600"
+        >
+          {isMenuOpen ? (
+            <FiX className="h-6 w-6" />
+          ) : (
+            <FiMenu className="h-6 w-6" />
+          )}
+        </button>
       </div>
+
+      {/* Mobile Navigation */}
+      {isMenuOpen && (
+        <div className="md:hidden border-t border-gray-200 py-4">
+          <nav className="flex flex-col space-y-2">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`text-sm font-medium ${
+                  pathname === item.href
+                    ? "text-blue-600"
+                    : "text-gray-700 hover:text-blue-600"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
