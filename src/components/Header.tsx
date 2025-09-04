@@ -92,44 +92,32 @@ export default function Header({ avatarImage }: HeaderProps) {
             ))}
           </nav>
 
-          <div className="relative">
-            <button
-              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-              className="flex flex-col items-center space-y-1 text-gray-700 hover:text-blue-600"
-            >
-              <img
-                src={displayAvatar}
-                alt="Profile"
-                className="w-10 h-10 rounded-full object-cover bg-center border-2 border-white shadow-md"
-              />
-              {/* <ChevronDown className="h-4 w-4 " /> */}
-            </button>
-            {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                <div className="px-4 py-2 border-b border-gray-200">
-                  <p className="text-sm font-medium text-gray-900">
-                    {userData?.name || session?.user?.name || "User"}{" "}
-                    {/* Use fetched name */}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {userData?.email || session?.user?.email || ""}
-                  </p>
-                </div>
-                <Link
-                  href="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsProfileDropdownOpen(false)}
-                >
-                  View Profile
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" /> Logout
-                </button>
-              </div>
-            )}
+            {/* Desktop Profile Image */}
+            <div className="hidden md:flex items-center">
+              <Link
+                href="/profile"
+                className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${
+                  pathname === "/profile" ? "bg-gray-100" : ""
+                }`}
+                aria-label="Profile"
+              >
+                <img
+                  src={displayAvatar}
+                  alt="User Avatar"
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <FiMenu size={28} className="text-gray-700" />
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
