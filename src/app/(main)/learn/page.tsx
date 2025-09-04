@@ -1,6 +1,3 @@
-
-
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -163,7 +160,13 @@ export default function LearnPage() {
                 <button className="bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-blue-700 transition-colors mb-4">
                     Lets Learn Together!
                 </button>
-                <Image src="/images/mascot.png" alt="Mascot" width={100} height={100} className="w-24 h-24 object-contain mx-auto" />
+                <div className="relative h-64 w-64 md:h-80 md:w-80 mx-auto flex items-center justify-center">
+                        <img
+                            src="/videos/readingmascot.gif" 
+                            alt="LissanAI Mascot Animation" 
+                            className="absolute inset-0 w-full h-full object-contain" // Keep consistent styling
+                        />
+                    </div>
             </div>
         </div>
       </main>
