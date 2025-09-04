@@ -560,12 +560,12 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50">
       {/* Centered Modal Popup */}
       {showNotificationPopup && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="fixed inset-0  bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div
             className={`bg-white rounded-4xl shadow-lg p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-2 ${
               popupType === "success"
-                ? "border-2 border-green-500"
-                : "border-2 border-red-500"
+                ? "border-2 border-green-500 text-2xl text-green-700"
+                : "border-2 border-red-500 text-2xl text-red-700"
             }`}
           >
             {popupType === "success" ? (
@@ -585,12 +585,12 @@ export default function Profile() {
                 />
               </>
             )}
-            <span className="text-gray-900">{notificationMessage}</span>
+            <span>{notificationMessage}</span>
             <button
               onClick={() => setShowNotificationPopup(false)}
               className="text-gray-600 hover:text-gray-800"
             >
-              ×
+              <XCircle className="h-8 w-8" />
             </button>
           </div>
         </div>
@@ -724,7 +724,7 @@ export default function Profile() {
                     className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-colors ${
                       isNotificationsEnabled
                         ? "bg-gradient-to-b from-blue-500 to-[#337fa1] border-blue-400 text-white"
-                        : "border-gray-300 text-gray-600 hover:border-gray-500 hover:text-gray-500"
+                        : "border-gray-300 text-blue-600 hover:border-blue-500 hover:text-blue-500"
                     }`}
                     title={
                       isNotificationsEnabled
