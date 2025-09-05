@@ -86,8 +86,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-            <DashboardNavbar />
+        <DashboardNavbar />
         <main>
         {/* Hero Section */}
         <section className="relative bg-[#dbe2ef] py-20 lg:py-24 overflow-hidden">
