@@ -521,7 +521,7 @@ export default function GrammarCoachPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Readability</span>
-                    <Badge variant="outline" className="text-blue-600">
+                    <Badge variant="outline" className="border-green-600">
                       <span className="text-green-600">Good</span>
                     </Badge>
                   </div>
