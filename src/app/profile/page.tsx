@@ -24,7 +24,34 @@ import {
   Mic,
   Activity,
   LogOut,
+  Flame,
+  Loader,
+  Bell,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import CalendarHeatmap from "react-calendar-heatmap";
+import "react-calendar-heatmap/dist/styles.css";
+
+export interface HeaderProps {
+  avatarImage?: string;
+  name?: string;
+}
+
+const motivationalMessages = [
+  "Keep it up, you're learning fast!",
+  "Every step counts towards mastery!",
+  "You're doing amazing—stay focused!",
+  "Progress is happening, one word at a time!",
+  "Believe in yourself, you're unstoppable!",
+];
+
+const getRandomMessage = () => {
+  return motivationalMessages[
+    Math.floor(Math.random() * motivationalMessages.length)
+  ];
+};
 
 export default function Profile() {
   const { data: session, update } = useSession();
@@ -46,16 +73,48 @@ export default function Profile() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const backgroundInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user data from API on mount
+  const [quote, setQuote] = useState("Keep it up, you're learning fast!");
+  const [streakInfo, setStreakInfo] = useState({
+    current_streak: 0,
+    longest_streak: 0,
+    can_freeze: true,
+    freeze_count: 0,
+    max_freezes: 2,
+    streak_frozen: false,
+  });
+  const [calendarData, setCalendarData] = useState<
+    { date: string; count: number }[]
+  >([]);
+  const [totalSessions, setTotalSessions] = useState(0);
+
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
+  const [showNotificationPopup, setShowNotificationPopup] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+
+  const [notificationCount, setNotificationCount] = useState(0); // Remains 0 since no API
+
+  const [popupType, setPopupType] = useState<"success" | "error">("success");
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const interval = setInterval(() => {
+      setQuote(getRandomMessage());
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
       if (!session?.accessToken) {
         setError("No session available. Please log in.");
         setLoading(false);
         return;
       }
       try {
-        const response = await fetch(
+        const userResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`,
           {
             headers: {
@@ -85,15 +144,64 @@ export default function Profile() {
           provider: userData.provider || session.user?.provider || "N/A",
           created_at: userData.created_at || new Date().toISOString(),
         });
+        setStreakInfo({
+          current_streak: userData.current_streak || 0,
+          longest_streak: userData.longest_streak || 0,
+          can_freeze: (userData.freeze_count || 0) < 2,
+          freeze_count: userData.freeze_count || 0,
+          max_freezes: 2,
+          streak_frozen: userData.streak_frozen || false,
+        });
+        setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
         setLoading(false);
       }
     };
-    fetchUser();
-  }, [session]); // Dependency on session
+    fetchData();
+  }, [session]);
 
-  // Update user data via API on save
+  useEffect(() => {
+    const fetchCalendarData = async () => {
+      try {
+        const calendarResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/streak/calendar?year=${selectedYear}`,
+          {
+            headers: {
+              Authorization: `Bearer ${session?.accessToken ?? ""}`,
+            },
+          }
+        );
+        if (calendarResponse.ok) {
+          const calendarData = await calendarResponse.json();
+          setTotalSessions(calendarData.summary.total_activities || 0);
+          const transformedData: { date: string; count: number }[] = [];
+          calendarData.weeks.forEach(
+            (week: {
+              days: {
+                date: string;
+                has_activity: boolean;
+                activity_count: number;
+              }[];
+            }) => {
+              week.days.forEach((day) => {
+                if (day.has_activity) {
+                  transformedData.push({
+                    date: day.date,
+                    count: day.activity_count,
+                  });
+                }
+              });
+            }
+          );
+          setCalendarData(transformedData);
+        }
+      } catch (err) {
+        console.error("Error fetching calendar data:", err);
+      }
+    };
+    if (session?.accessToken) fetchCalendarData();
+  }, [session, selectedYear]);
   const handleSave = async () => {
     if (!session?.accessToken) return;
     try {
@@ -214,7 +322,6 @@ export default function Profile() {
     }
   }, []);
 
-  // Save images to localStorage whenever they change (using Base64)
   useEffect(() => {
     if (avatarImage) {
       localStorage.setItem("avatarImage", avatarImage);
@@ -397,10 +504,52 @@ export default function Profile() {
 
   if (loading)
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gray-500">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-transparent border-white"></div>
-          <p className="text-white font-bold text-lg">Loading...</p>
+      <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div className="text-center">
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="mb-6"
+          >
+            <motion.img
+              src="/images/mascot2.png"
+              alt="Mascot"
+              className="w-32 h-32 mx-auto"
+              whileHover={{
+                rotate: [0, -10, 10, 0],
+                transition: { duration: 0.6 },
+              }}
+              whileTap={{ scale: 0.9, rotate: 15 }}
+            />
+          </motion.div>
+
+          {/* Motivational Message with Cycling */}
+          <motion.h2
+            key={quote}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-2xl font-bold text-blue-900 mb-4"
+          >
+            {quote}
+          </motion.h2>
+
+          {/* Pulsing Dots Progress Indicator */}
+          <div className="flex justify-center space-x-2">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                  ease: "easeInOut",
+                }}
+                className="w-4 h-4 bg-blue-400 rounded-full"
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -409,9 +558,46 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header avatarImage={avatarImage} />
+      {/* Centered Modal Popup */}
+      {showNotificationPopup && (
+        <div className="fixed inset-0  bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div
+            className={`bg-white rounded-4xl shadow-lg p-6 max-w-sm w-full mx-4 flex flex-col items-center gap-2 ${
+              popupType === "success"
+                ? "border-2 border-green-500 text-2xl text-green-700"
+                : "border-2 border-red-500 text-2xl text-red-700"
+            }`}
+          >
+            {popupType === "success" ? (
+              <>
+                <img
+                  src="/images/success.png"
+                  alt="Success"
+                  className="h-50 w-50"
+                />
+              </>
+            ) : (
+              <>
+                <img
+                  src="/images/error.png"
+                  alt="Error"
+                  className="h-50 w-50"
+                />
+              </>
+            )}
+            <span>{notificationMessage}</span>
+            <button
+              onClick={() => setShowNotificationPopup(false)}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              <XCircle className="h-8 w-8" />
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* Cover + Profile header */}
+      <Header avatarImage={avatarImage ?? undefined} />
+
       <section className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           <div
@@ -419,8 +605,8 @@ export default function Profile() {
             style={{
               backgroundImage: backgroundImage
                 ? `url(${backgroundImage})`
-                : "url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5QkHAGP89CW8-TkQ-po-xygiSom_SCGe4WQ&s)",
-              backgroundSize: "cover", // Ensures image covers the area
+                : "linear-gradient(to right, #ff7e5f, #feb47b)",
+              backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
               minHeight: "220px",
@@ -560,7 +746,7 @@ export default function Profile() {
                   <textarea
                     value={user.bio}
                     onChange={(e) => setUser({ ...user, bio: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-black font-italic"
                     rows={3}
                     placeholder="Bio"
                   />
@@ -574,8 +760,10 @@ export default function Profile() {
                   <div className="text-sm text-gray-600">Level</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-gray-900">28</div>
-                  <div className="text-sm text-gray-600">Achievements</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {totalSessions}
+                  </div>
+                  <div className="text-sm text-gray-600">Sessions</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-gray-900">
@@ -584,11 +772,19 @@ export default function Profile() {
                   <div className="text-sm text-gray-600">Longest Streak</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-gray-900">7</div>
-                  <div className="text-sm text-gray-600">Day Streak</div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {streakInfo.current_streak}
+                  </div>
+                  <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+                    <Flame
+                      className={`h-4 w-4 ${
+                        streakInfo.current_streak > 0 ? "fill-orange-400" : ""
+                      } border-amber-700 text-orange-500`}
+                    />{" "}
+                    Day Streak
+                  </div>
                 </div>
               </div>
-              {/* Tabs */}
               <div className="mt-6 border-b flex items-center gap-6 text-sm">
                 {(["overview", "activity", "awards"] as const).map((t) => (
                   <button
@@ -726,70 +922,43 @@ export default function Profile() {
                   </div>
                 </section>
 
-              <section className="bg-white rounded-xl shadow-sm border p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Recent Activity
-                </h2>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3 p-3 rounded-lg bg-green-50">
-                    <Award className="h-5 w-5 text-green-600 mt-0.5" />
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        Mock Interview Completed
+                <section className="bg-white rounded-xl shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Recent Activity
+                  </h2>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3 p-3 rounded-lg bg-green-50">
+                      <Award className="h-5 w-5 text-green-600 mt-0.5" />
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          Mock Interview Completed
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Frontend Developer role — Score 89%
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        Frontend Developer role — Score 89%
+                      <span className="text-xs text-gray-500 ml-auto">
+                        2 hours ago
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3 p-3 rounded-lg bg-blue-50">
+                      <BookOpen className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          Email Draft Generated
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Job application for remote position
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-xs text-gray-500 ml-auto">
-                      2 hours ago
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3 p-3 rounded-lg bg-blue-50">
-                    <BookOpen className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        Email Draft Generated
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Job application for remote position
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500 ml-auto">
-                      1 day ago
-                    </span>
-                  </li>
-                </ul>
-              </section>
-            </div>
-          )}
-
-          {activeTab === "progress" && (
-            <section className="bg-white rounded-xl shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Learning Progress
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white">
-                  <div className="flex items-center justify-between">
-                    <span>Pronunciation Score</span>
-                    <span className="font-bold">94%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/30 rounded-full mt-2">
-                    <div className="h-2 bg-white rounded-full w-[94%]"></div>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  <div className="flex items-center justify-between">
-                    <span>Grammar Mastery</span>
-                    <span className="font-bold">88%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/30 rounded-full mt-2">
-                    <div className="h-2 bg-white rounded-full w-[88%]"></div>
-                  </div>
-                </div>
+                      <span className="text-xs text-gray-500 ml-auto">
+                        1 day ago
+                      </span>
+                    </li>
+                  </ul>
+                </section>
               </div>
-            </section>
+            </>
           )}
 
           {activeTab === "activity" && (
@@ -861,6 +1030,10 @@ export default function Profile() {
                 <span className="font-medium">
                   {streakInfo.longest_streak} days
                 </span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Rank</span>
+                <span className="font-medium">#87</span>
               </li>
             </ul>
           </section>
