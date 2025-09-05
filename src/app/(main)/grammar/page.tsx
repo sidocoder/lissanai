@@ -22,6 +22,9 @@ export default function GrammarCoachPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [selectedLang, setSelectedLang] = useState<"english" | "amharic">(
+    "english"
+  );
 
   const handleDownload = () => {
     if (!analysisResults?.improvedText) return;
@@ -104,7 +107,19 @@ export default function GrammarCoachPage() {
     setIsAnalyzing(false);
   };
 
-  const sampleTexts = [
+  type SampleText = {
+    id: number;
+    title: string;
+    text:
+      | string
+      | {
+          english?: string;
+          amharic?: string;
+          [key: string]: string | undefined;
+        };
+  };
+
+  const sampleTexts: SampleText[] = [
     {
       id: 1,
       title: "Load Sample 1",
@@ -150,6 +165,32 @@ export default function GrammarCoachPage() {
               }`}
             >
               Practice Examples
+            </button>
+          </div>
+        </div>
+
+        {/* Language Toggle */}
+        <div className="flex justify-center mb-4 py-0.5 ">
+          <div className="flex bg-white rounded-lg p-1 shadow-sm border">
+            <button
+              onClick={() => setSelectedLang("english")}
+              className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
+                selectedLang === "english"
+                  ? "bg-[#337fa1] text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setSelectedLang("amharic")}
+              className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
+                selectedLang === "amharic"
+                  ? "bg-[#337fa1] text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              አማርኛ (Amharic)
             </button>
           </div>
         </div>
@@ -312,7 +353,11 @@ export default function GrammarCoachPage() {
                                 </span>
                               </div>
                               <p className="text-xs text-gray-900">
-                                {issue.message}
+                                {typeof issue.message === "object"
+                                  ? issue.message?.[selectedLang] ||
+                                    issue.message?.english ||
+                                    "No message"
+                                  : issue.message}
                               </p>
                             </div>
                           )
@@ -345,7 +390,11 @@ export default function GrammarCoachPage() {
                       </div>
                       <div className="bg-blue-50 rounded-lg p-4 flex flex-col">
                         <p className="text-md text-[#112D4F] whitespace-pre-line mb-2">
-                          {analysisResults.improvedText}
+                          {typeof analysisResults.improvedText === "object"
+                            ? analysisResults.improvedText?.[selectedLang] ||
+                              analysisResults.improvedText?.english ||
+                              "No improved text"
+                            : analysisResults.improvedText}
                         </p>
                         <div className="flex space-x-2 mt-2">
                           <Button
@@ -376,13 +425,19 @@ export default function GrammarCoachPage() {
                       </div>
                       <ul className="space-y-2">
                         {analysisResults.writingTips.map(
-                          (tip: string, idx: number) => (
+                          (tip: any, idx: number) => (
                             <li
                               key={idx}
                               className="flex items-center space-x-2 text-sm"
                             >
                               <Lightbulb className="w-3 h-3 text-yellow-500" />
-                              <span className="text-[#112D4F]">{tip}</span>
+                              <span className="text-[#112D4F]">
+                                {typeof tip === "object"
+                                  ? tip?.[selectedLang] ||
+                                    tip?.english ||
+                                    "No tip"
+                                  : tip}
+                              </span>
                             </li>
                           )
                         )}
@@ -407,11 +462,23 @@ export default function GrammarCoachPage() {
                       key={sample.id}
                       className="border rounded-lg p-4 bg-gray-50"
                     >
-                      <p className="text-sm text-black mb-3">{sample.text}</p>
+                      <p className="text-sm text-black mb-3">
+                        {typeof sample.text === "object"
+                          ? sample.text?.[selectedLang] ||
+                            sample.text?.english ||
+                            "No sample text"
+                          : sample.text}
+                      </p>
                       <Button
                         className="border bg-[#] text-[#112D4F]"
                         onClick={() => {
-                          setText(sample.text);
+                          setText(
+                            typeof sample.text === "object"
+                              ? sample.text?.[selectedLang] ||
+                                  sample.text?.english ||
+                                  ""
+                              : sample.text
+                          );
                           setActiveTab("examples");
                           setAnalysisResults(null);
                         }}
@@ -475,11 +542,11 @@ export default function GrammarCoachPage() {
                     <div className="w-80 h-80 bg-white rounded-full flex items-center justify-center shadow-lg">
                       <div className="relative h-64 w-64 md:h-80 md:w-80 mx-auto flex items-center justify-center">
                         <img
-                            src="/videos/sleepingmascot.gif" // Path to your GIF file
-                            alt="LissanAI Mascot Animation" // Accessible alt text for the image
-                            className="absolute inset-0 w-full h-full object-contain" // Keep consistent styling
+                          src="/videos/sleepingmascot.gif"
+                          alt="LissanAI Mascot Animation"
+                          className="absolute inset-0 w-full h-full object-contain"
                         />
-                    </div>
+                      </div>
                     </div>
                     <div className="flex items-center text-xs text-black bg-[#D9E0ED] rounded-full mt-2 px-3 py-1 font-medium shadow">
                       🗣️ Write your text
