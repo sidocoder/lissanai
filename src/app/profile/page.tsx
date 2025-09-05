@@ -165,7 +165,7 @@ export default function Profile() {
     const fetchCalendarData = async () => {
       try {
         const calendarResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/streak/calendar`,
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/streak/calendar?year=${selectedYear}`,
           {
             headers: {
               Authorization: `Bearer ${session?.accessToken ?? ""}`,
