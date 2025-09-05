@@ -112,7 +112,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
             <Link href="/" className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-[#3d72b3] to-[#112d4f] rounded-lg w-8 h-8 flex items-center justify-center"><span className="text-white font-bold text-lg">L</span></div>
+              <div className="bg-gradient-to-r from-[#a4c6f1] to-[#112d4f] rounded-lg w-8 h-8 flex items-center justify-center"><span className="text-white font-bold text-lg">L</span></div>
               <span className="text-xl font-bold text-black">LissanAI</span>
             </Link>
 
