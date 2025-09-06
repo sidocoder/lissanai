@@ -115,7 +115,7 @@ npm run cypress:open
 ![Alt text](./images/landingpage.png)
 
 ### Features Section → 
-![Alt text](./images/features.png)
+![Alt text](./public/images/features.png)
 ### Mock Interview Page → Example of Q&A with AI feedback.
 ![Alt text](./images/mockinterviewpage.png)
 ### Grammar & Clarity Page → A sentence being corrected in real-time.
