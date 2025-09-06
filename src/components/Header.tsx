@@ -99,7 +99,7 @@ export default function Header({ avatarImage }: HeaderProps) {
             </nav>
 
             {/* Desktop Profile Image with Dropdown */}
-            <div className="relative hidden md:flex items-center self-start">
+            <div className="relative hidden md:flex items-center self-center">
               <button
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 className="flex flex-col items-center space-y-1 text-gray-700 hover:text-blue-600"
@@ -107,7 +107,7 @@ export default function Header({ avatarImage }: HeaderProps) {
                 <img
                   src={displayAvatar}
                   alt="Profile"
-                  className="w-10 h-10 rounded-full object-cover bg-center border-2 border-white shadow-md"
+                  className="w-12 h-12 rounded-full object-cover bg-center border-2 border-white shadow-md"
                 />
               </button>
               {isProfileDropdownOpen && (
@@ -181,28 +181,25 @@ export default function Header({ avatarImage }: HeaderProps) {
                 </Link>
               ))}
               {/* Mobile Profile Section */}
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center space-x-3 mb-4">
-                  <img
-                    src={displayAvatar}
-                    alt="Profile"
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {(typeof userData?.name === "string" && userData?.name) ||
-                        "User"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {(typeof userData?.email === "string" &&
-                        userData.email) ||
-                        ""}
-                    </p>
-                  </div>
+              <div className="border-t border-gray-200 pt-4 text-center">
+                <img
+                  src={displayAvatar}
+                  alt="Profile"
+                  className="w-12 h-12 rounded-full object-cover mx-auto mb-3"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {(typeof userData?.name === "string" && userData?.name) ||
+                      "User"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(typeof userData?.email === "string" && userData.email) ||
+                      ""}
+                  </p>
                 </div>
                 <Link
                   href="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md mt-3"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   View Profile
@@ -212,7 +209,7 @@ export default function Header({ avatarImage }: HeaderProps) {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 rounded-md flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 rounded-md flex items-center gap-2 mt-2"
                 >
                   <LogOut className="h-4 w-4" /> Logout
                 </button>
