@@ -112,28 +112,28 @@ npm run cypress:open
 ## 📸 Screenshots
 
 ### Landing Page → Hero section with mascot animation.
-![Alt text](./images/landingpage.png)
+![Alt text](./public/images/landingpage.png)
 
 ### Features Section → 
 ![Alt text](./public/images/features.png)
 ### Mock Interview Page → Example of Q&A with AI feedback.
-![Alt text](./images/mockinterviewpage.png)
+![Alt text](./public/images/mockinterviewpage.png)
 ### Grammar & Clarity Page → A sentence being corrected in real-time.
-![Alt text](./images/grammarpage.png)
+![Alt text](./public/images/grammarpage.png)
 
 ### Email Drafting Page → Amharic → English email conversion with AI template.
-![Alt text](./images/emaildraftingpage.png)
+![Alt text](./public/images/emaildraftingpage.png)
 
 ### Pronunciation Coach → UI showing speech analysis / feedback.
-![Alt text](./images/pronunciationpage.png)
+![Alt text](./public/images/pronunciationpage.png)
 
 ### Learning Page → English lessons with quiz and progress tracker.
-![Alt text](./images/learn.png)
+![Alt text](./public/images/learn.png)
 
 ### Dashboard page→ Personalized user progress overview.
-![Alt text](./images/dashboardpage.png)
+![Alt text](./public/images/dashboardpage.png)
 ### Profile page→ Personalized user profile.
-![Alt text](./images/profilepage.png)
+![Alt text](./public/images/profilepage.png)
 
 ---
 
