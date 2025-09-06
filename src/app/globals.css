@@ -37,3 +37,6 @@ body {
 .color-scale-2 { fill: #40c463; } /* Medium green for moderate activity */
 .color-scale-3 { fill: #30a14e; } /* Darker green for high activity */
 .color-scale-4 { fill: #216e39; } /* Darkest green for very high activity */
+  margin: 0;
+  padding-top: 4rem; 
+}
