@@ -29,3 +29,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   padding-top: 4rem;
 }
+
+/* Custom CSS for Green Calendar Heatmap (GitHub-style) */
+.color-empty { fill: #ebedf0; } /* Light gray for empty days */
+.color-scale-0 { fill: #ebedf0; } /* Light gray for empty days */
+.color-scale-1 { fill: #9be9a8; } /* Light green for low activity */
+.color-scale-2 { fill: #40c463; } /* Medium green for moderate activity */
+.color-scale-3 { fill: #30a14e; } /* Darker green for high activity */
+.color-scale-4 { fill: #216e39; } /* Darkest green for very high activity */
