@@ -6,11 +6,9 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { FiBriefcase, FiMail, FiMic, FiEdit3, FiFacebook, FiTwitter, FiLinkedin, FiArrowLeft, FiArrowRight, FiMenu, FiX, FiSpeaker, FiBookOpen } from 'react-icons/fi';
 import { motion, AnimatePresence } from "framer-motion";
+import DashboardNavbar from '../components/DashboardNavbar';
 
-interface NavigationItem {
-  label: string;
-  href: string;
-}
+
 
 interface Feature {
   icon: React.ReactNode;
@@ -38,25 +36,6 @@ interface Testimonial {
 
 export default function LandingPage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { data: session, status } = useSession();
-  const isAuthenticated = status === 'authenticated';
-
-
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-  }, [isMenuOpen]);
-
-  
-  const navigationItems: NavigationItem[] = [
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Success Stories', href: '#testimonials' },
-  ];
 
   const features: Feature[] = [
     { icon: <FiBriefcase size={28} />, title: 'Mock Interviews', subtitle: 'Practice with AI', items: ['Industry-specific questions', 'Real-time feedback', 'Performance analytics'], gradient: 'bg-[#FFDDDE]',text: '#E4418A' },
@@ -107,84 +86,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md h-[73px] sticky top-0 z-50 w-full border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-          <div className="flex items-center justify-between h-full">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-[#3d72b3] to-[#112d4f] rounded-lg w-8 h-8 flex items-center justify-center"><span className="text-white font-bold text-lg">L</span></div>
-              <span className="text-xl font-bold text-black">LissanAI</span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => (
-                <a key={item.label} href={item.href} className="text-[#476385] hover:text-[#112d4e] transition-colors text-base font-medium">{item.label}</a>
-              ))}
-              <div className="flex items-center space-x-4">
-                {status === 'loading' ? (
-                  <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
-                ) : isAuthenticated ? (
-                  <>
-                    <Link href="/dashboard">
-                      <button className="bg-[#337fa1] text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-[#225d79] transition-colors">Dashboard</button>
-                    </Link>
-                    <button onClick={() => signOut()} className="bg-[#f0f2f5] rounded-lg px-5 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition-colors">Log Out</button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login">
-                      <button className="bg-[#f0f2f5] border border-transparent rounded-lg px-5 py-2 text-sm font-semibold text-black hover:bg-gray-200 transition-colors">Log In</button>
-                    </Link>
-                    <Link href="/signup">
-                      <button className="bg-[#0057b7] text-white rounded-lg px-5 py-2 text-sm font-semibold hover:bg-[#004499] transition-colors">Sign Up</button>
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <button onClick={() => setIsMenuOpen(true)} aria-label="Open menu"><FiMenu size={28} className="text-gray-700" /></button>
-            </div>
-          </div>
-        </div>
-      </nav>
-      
-      {isMenuOpen && (
-        <div className="fixed inset-0 bg-gray-900/90 z-50 flex flex-col items-center justify-center md:hidden">
-          <button onClick={() => setIsMenuOpen(false)} className="absolute top-6 right-6" aria-label="Close menu"><FiX size={32} className="text-white" /></button>
-          <nav className="flex flex-col items-center gap-8">
-            {navigationItems.map((item) => (
-              <a key={item.label} href={item.href} onClick={() => setIsMenuOpen(false)} className="text-white text-2xl font-semibold">{item.label}</a>
-            ))}
-            <div className="flex flex-col items-center gap-6 mt-8">
-               {status === 'loading' ? (
-                  <div className="h-12 w-32 bg-gray-600 rounded-lg animate-pulse"></div>
-                ) : isAuthenticated ? (
-                  <>
-                    <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
-                        <button className="bg-white text-black rounded-lg px-8 py-3 text-lg font-semibold hover:bg-gray-200 transition-colors">Dashboard</button>
-                    </Link>
-                    <button onClick={() => { signOut(); setIsMenuOpen(false); }} className="text-white text-lg font-semibold">Log Out</button>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                      <button className="bg-white border border-transparent rounded-lg px-8 py-3 text-lg font-semibold text-black hover:bg-gray-200 transition-colors">Log In</button>
-                    </Link>
-                    <Link href="/signup" onClick={() => setIsMenuOpen(false)}>
-                      <button className="bg-[#0057b7] text-white rounded-lg px-8 py-3 text-lg font-semibold hover:bg-[#004499] transition-colors">Sign Up</button>
-                    </Link>
-                  </>
-                )}
-            </div>
-          </nav>
-        </div>
-      )}
-
-      <main>
+        <DashboardNavbar />
+        <main>
         {/* Hero Section */}
         <section className="relative bg-[#dbe2ef] py-20 lg:py-24 overflow-hidden">
             <div className="absolute inset-0 opacity-20"><svg className="absolute right-0 top-0 w-full h-auto md:w-[502px]" viewBox="0 0 502 256" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M502 256C502 114.613 389.387 0 248 0H0V256H502Z" fill="url(#paint0_linear_hero)"/><defs><linearGradient id="paint0_linear_hero" x1="0" y1="128" x2="502" y2="128" gradientUnits="userSpaceOnUse"><stop stopColor="#A0E7E5" stopOpacity="0"/><stop offset="1" stopColor="#3f72af"/></linearGradient></defs></svg></div>
