@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/((?!auth).*)", // Exclude /api/auth/* from proxy
+        source: "/backend/:path*",
         destination: "https://lissan-ai-backend-dev.onrender.com/api/:path*",
       },
     ];
