@@ -419,7 +419,6 @@ export default function PronunciationPage() {
                     recordingStatus === "completed") && (
                     <>
                       <FaMicrophone className="text-sm" />
-                      <FiActivity className="text-sm" />
                       <span>Start Recording</span>
                     </>
                   )}
